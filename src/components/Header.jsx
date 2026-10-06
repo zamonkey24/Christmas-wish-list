@@ -13,8 +13,23 @@ export default function Header({ currentView, setCurrentView, wishlistItems, own
           onClick={() => setCurrentView('quiz')} 
           style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
         >
-          <div style={{ width: '42px', height: '42px', borderRadius: '14px', background: 'linear-gradient(135deg, #e11d48, #9f1239)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(225, 29, 72, 0.4)' }}>
-            <Gift style={{ width: '24px', height: '24px', color: '#fff' }} />
+          <div 
+            style={{ 
+              width: '46px', 
+              height: '46px', 
+              borderRadius: '16px', 
+              background: 'linear-gradient(135deg, #e11d48, #be123c)', 
+              border: '2px solid #fbbf24',
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              fontSize: '1.6rem',
+              boxShadow: '0 4px 14px rgba(225, 29, 72, 0.5), 0 0 10px rgba(251, 191, 36, 0.3)',
+              position: 'relative'
+            }}
+            title="Santa's Secret Wishlist"
+          >
+            🎁
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
