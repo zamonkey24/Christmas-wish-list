@@ -110,5 +110,33 @@ export const DEFAULT_WISHLIST = [
     claimed: false,
     claimedBy: "",
     claimedNote: ""
+  },
+  {
+    id: "g_based_moisturizer",
+    title: "BASED Purifying & Restoring Moisturizer",
+    price: 36,
+    category: "Everyday Essentials",
+    closenessRequired: "casual",
+    priority: "High Wish ❤️",
+    imageUrl: "/products/based_moisturizer.jpg",
+    url: "https://www.amazon.com/dp/B0FCW6W4PY",
+    description: "BASED purifying & restoring moisturizer for my skincare routine.",
+    claimed: false,
+    claimedBy: "",
+    claimedNote: ""
+  },
+  {
+    id: "g_based_bodywash",
+    title: "BASED Performance Body Wash (Hydrating & Exfoliating)",
+    price: 30,
+    category: "Everyday Essentials",
+    closenessRequired: "casual",
+    priority: "High Wish ❤️",
+    imageUrl: "/products/based_bodywash.jpg",
+    url: "https://www.amazon.com/dp/B0DPY6WBB1",
+    description: "BASED hydrating & exfoliating body wash. ⚠️ PLEASE get the COCONUT scent!",
+    claimed: false,
+    claimedBy: "",
+    claimedNote: ""
   }
 ];

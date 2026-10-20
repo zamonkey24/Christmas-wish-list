@@ -8,7 +8,7 @@ import Snowfall from './components/Snowfall';
 import { DEFAULT_WISHLIST } from './data/initialWishlist';
 import { Lock, KeyRound } from 'lucide-react';
 
-const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v10';
+const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v11';
 const OWNER_NAME_STORAGE_KEY = 'festive_gift_quiz_owner_v1';
 const ADMIN_PASSWORD = '01015';
 
