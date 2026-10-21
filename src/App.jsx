@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import Quiz from './components/Quiz';
 import QuizResult from './components/QuizResult';
@@ -8,8 +8,10 @@ import Snowfall from './components/Snowfall';
 import { DEFAULT_WISHLIST } from './data/initialWishlist';
 import { Lock, KeyRound } from 'lucide-react';
 
-const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v11';
+const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v12';
 const OWNER_NAME_STORAGE_KEY = 'festive_gift_quiz_owner_v1';
+const SYNC_URL = '/api/state';
+const POLL_MS = 15000;
 const ADMIN_PASSWORD = '01015';
 
 export default function App() {
@@ -44,6 +46,62 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(OWNER_NAME_STORAGE_KEY, ownerName);
   }, [ownerName]);
+
+  // Shared state across devices (Netlify Function + Blobs). LocalStorage above is the offline fallback.
+  const lastServer = useRef(null);
+  const synced = useRef(false);
+  const pending = useRef(false);
+
+  const applyServerState = (state) => {
+    lastServer.current = JSON.stringify({ items: state.items, ownerName: state.ownerName });
+    setWishlistItems(state.items);
+    setOwnerName(state.ownerName);
+  };
+
+  useEffect(() => {
+    const pull = async () => {
+      if (pending.current) return;
+      try {
+        const res = await fetch(SYNC_URL, { cache: 'no-store' });
+        if (!res.ok) return;
+        const state = await res.json();
+        if (pending.current) return;
+        if (state && Array.isArray(state.items)) {
+          if (JSON.stringify({ items: state.items, ownerName: state.ownerName }) !== lastServer.current) {
+            applyServerState(state);
+          }
+        }
+        synced.current = true;
+        // Server empty: the push effect below seeds it with the current list.
+        setSyncTick(t => t + 1);
+      } catch (e) { /* offline or local dev: keep local copy */ }
+    };
+    pull();
+    const timer = setInterval(pull, POLL_MS);
+    const onVisible = () => { if (document.visibilityState === 'visible') pull(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
+  const [syncTick, setSyncTick] = useState(0);
+
+  useEffect(() => {
+    if (!synced.current) return;
+    const body = JSON.stringify({ items: wishlistItems, ownerName });
+    if (body === lastServer.current) return;
+    pending.current = true;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(SYNC_URL, { method: 'PUT', headers: { 'content-type': 'application/json' }, body });
+        if (res.ok) lastServer.current = body;
+      } catch (e) { /* retried on next change */ }
+      pending.current = false;
+    }, 400);
+    return () => { clearTimeout(timer); pending.current = false; };
+  }, [wishlistItems, ownerName, syncTick]);
 
   // Handle admin view: require password
   const handleSetView = (view) => {
