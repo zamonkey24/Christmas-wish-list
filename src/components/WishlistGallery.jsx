@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, ExternalLink, Gift, CheckCircle2, Sparkles, Lock, KeyRound, X, Undo2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import ProductLink from './ProductLink';
 
 export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimItem, ownerName, adminPassword }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -262,17 +263,14 @@ export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimI
                       Claim Gift
                     </button>
                   )}
-
-                  <a 
-                    href={item.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <ProductLink
+                    item={item}
                     className="festive-btn-secondary"
-                    style={{ padding: '8px 16px', fontSize: '0.85rem', textDecoration: 'none' }}
+                    style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                    iconSize="14px"
                   >
-                    <ExternalLink style={{ width: '14px', height: '14px' }} />
                     View Product Link
-                  </a>
+                  </ProductLink>
                 </div>
 
               </div>

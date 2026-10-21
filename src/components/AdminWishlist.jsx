@@ -25,6 +25,7 @@ export default function AdminWishlist({
   const [url, setUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
+  const [mustGet, setMustGet] = useState('');
 
   const resetForm = () => {
     setTitle('');
@@ -35,6 +36,7 @@ export default function AdminWishlist({
     setUrl('');
     setImageUrl('');
     setDescription('');
+    setMustGet('');
     setEditingItemId(null);
     setShowAddForm(false);
   };
@@ -53,6 +55,7 @@ export default function AdminWishlist({
       url: url.trim() || 'https://amazon.com',
       imageUrl: imageUrl.trim() || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80',
       description: description.trim() || 'A wonderful holiday gift choice!',
+      mustGet: mustGet.trim(),
       claimed: false,
       claimedBy: '',
       claimedNote: ''
@@ -77,6 +80,7 @@ export default function AdminWishlist({
     setUrl(item.url);
     setImageUrl(item.imageUrl);
     setDescription(item.description);
+    setMustGet(item.mustGet || '');
     setShowAddForm(true);
   };
 
@@ -240,6 +244,11 @@ export default function AdminWishlist({
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '6px', fontWeight: 600 }}>Image URL (Unsplash or direct image link)</label>
             <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://images.unsplash.com/..." style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff' }} />
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '6px', fontWeight: 600 }}>"Please get..." reminder (optional, shown in a pop-up before the store link opens)</label>
+            <input type="text" value={mustGet} onChange={(e) => setMustGet(e.target.value)} placeholder="e.g. the WHITE one" style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff' }} />
           </div>
 
           <div style={{ marginBottom: '24px' }}>

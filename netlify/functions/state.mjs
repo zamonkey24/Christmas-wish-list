@@ -28,7 +28,7 @@ export default async (req) => {
     if (!Array.isArray(body.items) || typeof body.ownerName !== "string") {
       return json({ error: "bad shape" }, 400);
     }
-    const state = { items: body.items, ownerName: body.ownerName, updatedAt: Date.now() };
+    const state = { items: body.items, ownerName: body.ownerName, version: body.version ?? 0, updatedAt: Date.now() };
     await store.setJSON(KEY, state);
     return json(state);
   }

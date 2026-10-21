@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ProductLink from './ProductLink';
 import { Sparkles, Gift, ExternalLink, CheckCircle2, RotateCcw, Award, Maximize2, X, Lock, Undo2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -232,17 +233,14 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
                     Claim & Reserve This Gift!
                   </button>
                 )}
-
-                <a 
-                  href={item.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
+                <ProductLink
+                  item={item}
                   className="festive-btn-secondary"
-                  style={{ width: '100%', textDecoration: 'none' }}
+                  style={{ width: '100%' }}
+                  iconSize="16px"
                 >
-                  <ExternalLink style={{ width: '16px', height: '16px' }} />
                   View Store / Product Link
-                </a>
+                </ProductLink>
 
                 {/* Photo Disclaimer Note */}
                 <div style={{ fontSize: '0.75rem', color: '#64748b', textAlign: 'center', marginTop: '4px', fontStyle: 'italic' }}>

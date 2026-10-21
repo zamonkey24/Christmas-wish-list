@@ -8,8 +8,10 @@ import Snowfall from './components/Snowfall';
 import { DEFAULT_WISHLIST } from './data/initialWishlist';
 import { Lock, KeyRound } from 'lucide-react';
 
-const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v12';
+const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v13';
 const OWNER_NAME_STORAGE_KEY = 'festive_gift_quiz_owner_v1';
+// Bump when DEFAULT_WISHLIST changes: merges new defaults into the shared list, keeping claims and admin-added items.
+const DATA_VERSION = 2;
 const SYNC_URL = '/api/state';
 const POLL_MS = 15000;
 const ADMIN_PASSWORD = '01015';
@@ -52,9 +54,25 @@ export default function App() {
   const synced = useRef(false);
   const pending = useRef(false);
 
+  const serialize = (items, name, version) => JSON.stringify({ items, ownerName: name, version });
+
+  const migrate = (items) => {
+    const byId = new Map(items.map(i => [i.id, i]));
+    const merged = DEFAULT_WISHLIST.map(def => {
+      const old = byId.get(def.id);
+      return old ? { ...def, claimed: old.claimed, claimedBy: old.claimedBy, claimedNote: old.claimedNote } : def;
+    });
+    const adminAdded = items.filter(i => /^g_\d+$/.test(i.id));
+    return [...adminAdded, ...merged];
+  };
+
   const applyServerState = (state) => {
-    lastServer.current = JSON.stringify({ items: state.items, ownerName: state.ownerName });
-    setWishlistItems(state.items);
+    lastServer.current = serialize(state.items, state.ownerName, state.version ?? 0);
+    if ((state.version ?? 0) < DATA_VERSION) {
+      setWishlistItems(migrate(state.items)); // differs from lastServer, so the push effect saves it
+    } else {
+      setWishlistItems(state.items);
+    }
     setOwnerName(state.ownerName);
   };
 
@@ -67,7 +85,7 @@ export default function App() {
         const state = await res.json();
         if (pending.current) return;
         if (state && Array.isArray(state.items)) {
-          if (JSON.stringify({ items: state.items, ownerName: state.ownerName }) !== lastServer.current) {
+          if (serialize(state.items, state.ownerName, state.version ?? 0) !== lastServer.current) {
             applyServerState(state);
           }
         }
@@ -90,7 +108,7 @@ export default function App() {
 
   useEffect(() => {
     if (!synced.current) return;
-    const body = JSON.stringify({ items: wishlistItems, ownerName });
+    const body = serialize(wishlistItems, ownerName, DATA_VERSION);
     if (body === lastServer.current) return;
     pending.current = true;
     const timer = setTimeout(async () => {

@@ -18,3 +18,9 @@ Added BASED Daily Skincare Duo ($36, B0FCW6W4PY; face wash + moisturizer) and BA
 ## Cross-device sync (committed locally, NOT pushed, untested on Netlify)
 Problem: wishlist/claims lived only in each browser's localStorage. Fix: netlify/functions/state.mjs (GET/PUT /api/state, stored in Netlify Blobs, store "wishlist", key "wishlist-state"); src/App.jsx pulls every 15s + on tab focus, pushes 400ms after any change (last write wins). If the server is empty, the first visitor's current list seeds it. If the function fails (e.g. local `npm run dev`), the app falls back to localStorage. netlify.toml added. @netlify/blobs added to package.json.
 Caveats: no auth on PUT (guests must be able to claim); after first deploy, default-list edits in code no longer reach users - edit via the Admin page or clear the blob. Not run locally (local Node 18 too old for netlify-cli); verify after deploy: change something on one device, see it on another within ~15s.
+
+## Latest (committed locally, NOT pushed)
+- Added BASED Curl Cream ($18, B0DTXR6NSB, verified on Amazon) with real photo.
+- New optional item field `mustGet` (lotion "AMBER scent", pedals "WHITE one", body wash "COCONUT scent"): src/components/ProductLink.jsx shows a "Please get ..." pop-up with Cancel / "Got it" (opens the Amazon link). Used in WishlistGallery and QuizResult; Admin form has a field for it.
+- DATA_VERSION in src/App.jsx: when DEFAULT_WISHLIST changes, bump it so the shared list merges the new defaults (keeps claims + admin-added items with ids like g_<digits>). Server function stores `version`.
+- Known issue (pre-existing): editing an item in Admin resets its claim status (AdminWishlist handleSaveItem hardcodes claimed:false).

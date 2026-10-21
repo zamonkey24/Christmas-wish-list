@@ -29,6 +29,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_lotion",
+    mustGet: "AMBER scent",
     title: "BASED Body Lotion (Dusk & Dawn Ceramides Moisturizer)",
     price: 25,
     category: "Everyday Essentials",
@@ -71,6 +72,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_bike_pedals",
+    mustGet: "WHITE one",
     title: "BORUIZHEN Aluminium Lightweight Mountain Bike Pedals (Anti-Skid)",
     price: 17,
     category: "Tech & Gadgets",
@@ -127,6 +129,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_bodywash",
+    mustGet: "COCONUT scent",
     title: "BASED Performance Body Wash - Coconut Scent (16 fl oz)",
     price: 30,
     category: "Everyday Essentials",
@@ -135,6 +138,20 @@ export const DEFAULT_WISHLIST = [
     imageUrl: "/products/based_bodywash.jpg",
     url: "https://www.amazon.com/dp/B0DPY6WBB1",
     description: "BASED hydrating & exfoliating body wash. ⚠️ PLEASE get the COCONUT scent!",
+    claimed: false,
+    claimedBy: "",
+    claimedNote: ""
+  },
+  {
+    id: "g_based_curl_cream",
+    title: "BASED Curl Cream (Medium Hold, 8.5 oz)",
+    price: 18,
+    category: "Everyday Essentials",
+    closenessRequired: "casual",
+    priority: "High Wish ❤️",
+    imageUrl: "/products/based_curlcream.jpg",
+    url: "https://www.amazon.com/dp/B0DTXR6NSB",
+    description: "BASED curl defining cream with agave, silk protein & castor oil. Medium hold, hydrates and nourishes.",
     claimed: false,
     claimedBy: "",
     claimedNote: ""
