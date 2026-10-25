@@ -213,5 +213,20 @@ export const DEFAULT_WISHLIST = [
     claimed: false,
     claimedBy: "",
     claimedNote: ""
+  },
+  {
+    id: "g_cologne",
+    mustGet: "2.5 oz bottle",
+    title: "Jean Paul Gaultier Le Beau Eau de Toilette (2.5 oz)",
+    price: 110,
+    category: "Everyday Essentials",
+    closenessRequired: "friend",
+    priority: "High Wish ❤️",
+    imageUrl: "/products/cologne.jpg",
+    url: "https://www.amazon.com/dp/B07TK11FQN?psc=1",
+    description: "Jean Paul Gaultier Le Beau men's cologne with bergamot, coconut wood and tonka bean.",
+    claimed: false,
+    claimedBy: "",
+    claimedNote: ""
   }
 ];

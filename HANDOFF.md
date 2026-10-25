@@ -30,3 +30,6 @@ Hair Elixir 25, Curl Refresh Spray 18.99, Leave-In 18, Under Eye Elixir 28, Faci
 
 ## Update (committed locally, NOT pushed)
 Removed again at owner's request: Daily Facial Cleanser, Daily Facial Moisturizer, Leave-In Conditioner, Curl Refresh Spray (cleanser+moisturizer are already covered by the Daily Skincare Duo). Added BASED Multi-Active Skin Elixir ($40, 1 bottle, https://based.com/products/skin-elixir, not on Amazon; "Please get 1 BOTTLE" pop-up). DATA_VERSION 4, key v15. Other BASED non-bundle products not added: Scalp Scrubber $20, White Face Towel $20, Toiletry Bag $50 (owner hasn't asked). Deodorant is now Bergamot Vanilla (B0DSYV8LVQ), confirmed by owner; owner declined scrubber, towel, bag. DATA_VERSION 5, key v16.
+
+## Cologne (committed locally, NOT pushed)
+Added Jean Paul Gaultier Le Beau EDT 2.5 oz, $110 (Amazon price verified; $104.50 w/ Subscribe & Save), B07TK11FQN, 'Please get 2.5 oz bottle' pop-up. closenessRequired 'friend'. DATA_VERSION 6, key v17.
