@@ -24,3 +24,6 @@ Caveats: no auth on PUT (guests must be able to claim); after first deploy, defa
 - New optional item field `mustGet` (lotion "AMBER scent", pedals "WHITE one", body wash "COCONUT scent"): src/components/ProductLink.jsx shows a "Please get ..." pop-up with Cancel / "Got it" (opens the Amazon link). Used in WishlistGallery and QuizResult; Admin form has a field for it.
 - DATA_VERSION in src/App.jsx: when DEFAULT_WISHLIST changes, bump it so the shared list merges the new defaults (keeps claims + admin-added items with ids like g_<digits>). Server function stores `version`.
 - Known issue (pre-existing): editing an item in Admin resets its claim status (AdminWishlist handleSaveItem hardcodes claimed:false).
+
+## Added all remaining BASED products (committed locally, NOT pushed)
+Hair Elixir 25, Curl Refresh Spray 18.99, Leave-In 18, Under Eye Elixir 28, Facial Cleanser 20, Facial Moisturizer 20, Deodorant 18 (Santal Sandalwood - scent is a guess; other listings: Bergamot Vanilla B0DSYV8LVQ, Guava Nectar B0DSYP494S). All prices verified on Amazon listings. Lotion now links the Amber listing (B0H6R9W7LX). User excluded: texture powder, sea salt spray, clay, pomade, shampoo, conditioner, skin revival spray (and bundles containing them). Tallow Moisturizer is sold out on brand site / not found on Amazon - skipped. DATA_VERSION 3, storage key v14.
