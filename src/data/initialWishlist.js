@@ -171,34 +171,6 @@ export const DEFAULT_WISHLIST = [
     claimedNote: ""
   },
   {
-    id: "g_based_curl_refresh",
-    title: "BASED Curl Refresh Spray (6.8 fl oz)",
-    price: 18.99,
-    category: "Everyday Essentials",
-    closenessRequired: "casual",
-    priority: "High Wish ❤️",
-    imageUrl: "/products/based_curl_refresh.jpg",
-    url: "https://www.amazon.com/dp/B0GF3Y4YS1",
-    description: "BASED lightweight hydrating spray to refresh and define curls between washes.",
-    claimed: false,
-    claimedBy: "",
-    claimedNote: ""
-  },
-  {
-    id: "g_based_leavein",
-    title: "BASED Leave-In Conditioner (9.3 fl oz)",
-    price: 18,
-    category: "Everyday Essentials",
-    closenessRequired: "casual",
-    priority: "High Wish ❤️",
-    imageUrl: "/products/based_leavein.jpg",
-    url: "https://www.amazon.com/dp/B0DK293N2C",
-    description: "BASED leave-in conditioner for instant frizz control, hydrates and nourishes hair.",
-    claimed: false,
-    claimedBy: "",
-    claimedNote: ""
-  },
-  {
     id: "g_based_undereye",
     title: "BASED Under Eye Elixir (0.5 fl oz)",
     price: 28,
@@ -213,34 +185,6 @@ export const DEFAULT_WISHLIST = [
     claimedNote: ""
   },
   {
-    id: "g_based_cleanser",
-    title: "BASED Daily Facial Cleanser",
-    price: 20,
-    category: "Everyday Essentials",
-    closenessRequired: "casual",
-    priority: "High Wish ❤️",
-    imageUrl: "/products/based_cleanser.jpg",
-    url: "https://www.amazon.com/dp/B0FCJZ3P39",
-    description: "BASED deep-cleaning face wash with bamboo charcoal and willow bark.",
-    claimed: false,
-    claimedBy: "",
-    claimedNote: ""
-  },
-  {
-    id: "g_based_face_moisturizer",
-    title: "BASED Daily Facial Moisturizer",
-    price: 20,
-    category: "Everyday Essentials",
-    closenessRequired: "casual",
-    priority: "High Wish ❤️",
-    imageUrl: "/products/based_face_moisturizer.jpg",
-    url: "https://www.amazon.com/dp/B0FCHFLGWP",
-    description: "BASED daily face moisturizer with squalane and rosehip oil to strengthen the skin barrier.",
-    claimed: false,
-    claimedBy: "",
-    claimedNote: ""
-  },
-  {
     id: "g_based_deodorant",
     title: "BASED Performance Deodorant - Santal Sandalwood",
     price: 18,
@@ -250,6 +194,21 @@ export const DEFAULT_WISHLIST = [
     imageUrl: "/products/based_deodorant.jpg",
     url: "https://www.amazon.com/dp/B0DSZ2MF94",
     description: "BASED aluminum-free deodorant with magnesium, beeswax and shea butter.",
+    claimed: false,
+    claimedBy: "",
+    claimedNote: ""
+  },
+  {
+    id: "g_based_skin_elixir",
+    mustGet: "1 BOTTLE",
+    title: "BASED Multi-Active Skin Elixir",
+    price: 40,
+    category: "Everyday Essentials",
+    closenessRequired: "casual",
+    priority: "High Wish ❤️",
+    imageUrl: "/products/based_skin_elixir.jpg",
+    url: "https://based.com/products/skin-elixir",
+    description: "BASED once-daily skin treatment with bakuchiol, acerola cherry ferment and squalane. Brightens, restores and smooths. (Sold on based.com.)",
     claimed: false,
     claimedBy: "",
     claimedNote: ""

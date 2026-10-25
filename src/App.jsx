@@ -8,10 +8,10 @@ import Snowfall from './components/Snowfall';
 import { DEFAULT_WISHLIST } from './data/initialWishlist';
 import { Lock, KeyRound } from 'lucide-react';
 
-const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v14';
+const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v15';
 const OWNER_NAME_STORAGE_KEY = 'festive_gift_quiz_owner_v1';
 // Bump when DEFAULT_WISHLIST changes: merges new defaults into the shared list, keeping claims and admin-added items.
-const DATA_VERSION = 3;
+const DATA_VERSION = 4;
 const SYNC_URL = '/api/state';
 const POLL_MS = 15000;
 const ADMIN_PASSWORD = '01015';
