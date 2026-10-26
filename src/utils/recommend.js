@@ -40,8 +40,8 @@ const fit = (total, budget) => Math.max(0, 1 - Math.abs(budget - total) / budget
 const MIN_SOLO_SHARE = 0.6; // a flagship gift should use most of the budget
 const MIN_BUNDLE_SHARE = 0.75;
 
-export function getRecommendation(items, { relationship, budget, flex, interests = [], style = 'any', strategy }) {
-  const cap = budget * (flex === 'over' ? 1.15 : 1.0);
+export function getRecommendation(items, { relationship, budget, interests = [], style = 'any', strategy }) {
+  const cap = budget; // never recommend more than the budget
   const byTier = items.filter(item => {
     if (relationship === 'casual' && item.closenessRequired !== 'casual') return false;
     if (relationship === 'friend' && item.closenessRequired === 'close') return false;

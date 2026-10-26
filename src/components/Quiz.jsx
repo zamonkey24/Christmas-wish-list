@@ -15,12 +15,11 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
   const [step, setStep] = useState(1);
   const [relationship, setRelationship] = useState('friend');
   const [budget, setBudget] = useState(50);
-  const [flex, setFlex] = useState('strict');
   const [interests, setInterests] = useState([]);
   const [style, setStyle] = useState('any');
   const [strategy, setStrategy] = useState('combo');
 
-  const totalSteps = 6;
+  const totalSteps = 5;
   const MIN_BUDGET = 15;
   const MAX_BUDGET = 250;
 
@@ -46,7 +45,6 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
       onCompleteQuiz({
         relationship,
         budget: Number(budget),
-        flex,
         interests,
         style,
         strategy
@@ -251,31 +249,8 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
           </div>
         )}
 
-        {/* QUESTION 3: BUDGET FLEXIBILITY */}
+        {/* QUESTION 3: INTERESTS (multi-select) */}
         {step === 3 && (
-          <div className="animate-fade-in">
-            <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>
-              How firm is your ${budget} budget? 💵
-            </h2>
-            <p style={{ color: '#94a3b8', marginBottom: '28px', fontSize: '0.95rem' }}>
-              We'll aim to use most of it, so you're not stuck with a gift that's way under what you wanted to spend.
-            </p>
-            <div style={{ display: 'grid', gap: '14px' }}>
-              {[
-                { id: 'strict', title: `Stay at or under $${budget}`, desc: 'Never go over.' },
-                { id: 'over', title: `A little over is fine (up to $${Math.round(budget * 1.15)})`, desc: 'Lets us pick a better match if one is just above.' }
-              ].map(opt => (
-                <div key={opt.id} onClick={() => setFlex(opt.id)} style={optionStyle(flex === opt.id)}>
-                  <strong style={{ fontSize: '1.05rem', color: flex === opt.id ? '#fbbf24' : '#f8fafc', display: 'block', marginBottom: '4px' }}>{opt.title}</strong>
-                  <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>{opt.desc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* QUESTION 4: INTERESTS (multi-select) */}
-        {step === 4 && (
           <div className="animate-fade-in">
             <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>
               What kind of gifts sound good? ✨
@@ -302,8 +277,8 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
           </div>
         )}
 
-        {/* QUESTION 5: STYLE */}
-        {step === 5 && (
+        {/* QUESTION 4: STYLE */}
+        {step === 4 && (
           <div className="animate-fade-in">
             <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>
               What kind of gift is it? 🎀
@@ -322,8 +297,8 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
           </div>
         )}
 
-        {/* QUESTION 6: STRATEGY */}
-        {step === 6 && (
+        {/* QUESTION 5: STRATEGY */}
+        {step === 5 && (
           <div className="animate-fade-in">
             <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>
               How should we package your recommendation? 🎁
