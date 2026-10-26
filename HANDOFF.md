@@ -61,3 +61,6 @@ Lattafa Maahir Legacy EDP 3.4 oz $26.95 (B0BTPBZD1M, pack of 1 note) and Cremo C
 
 ## Quiz fixes (committed locally, NOT pushed)
 1) Float bug: totals showed e.g. 207.20999999999998 and "-$42.79000000000002 target". Now sums are rounded to cents (recommend.js `sum`/`cents`) and shown via `formatPrice`; badge says "$X under budget". 2) Distant friend + $250 + bundle fell back to a lone gift card: casual-tier items can't reach the budget. getRecommendation now escalates tiers (casual -> +friend -> +close; friend -> +close) until the result uses enough of the budget, shows a note when widened, and shows a note if a bundle couldn't be built (fellBack). Gift cards get a -2.5 score penalty unless the "gift card is fine" interest is picked. MIN_BUNDLE_SHARE lowered to 0.7. Tested 252 combos: never over budget.
+
+## Fill It Up + Armani (committed locally, NOT pushed)
+New packaging option "Fill It Up" (strategy 'fill'): knapsack over cents in src/utils/recommend.js picks up to 10 gifts (big and small) totalling as close to the budget as possible, never over, skipping gift cards unless "gift card is fine" is picked; result page shows a note. Added Armani Beauty Stronger With You Intensely EDP 1.7 fl oz $89.25 (B0DBRGYTDB; other sizes on Amazon: 3.4 oz $110.49 B0DBRSBNRZ, 5 oz $127.49 B0DNNGY673), tier 'friend'. DATA_VERSION 9, key v20.

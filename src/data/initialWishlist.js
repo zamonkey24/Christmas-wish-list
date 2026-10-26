@@ -276,5 +276,21 @@ export const DEFAULT_WISHLIST = [
     claimed: false,
     claimedBy: "",
     claimedNote: ""
+  },
+  {
+    id: "g_cologne_armani",
+    mustGet: "1.7 fl oz, pack of 1",
+    tags: ["fragrance", "luxury"],
+    title: "Armani Beauty Stronger With You Intensely Eau de Parfum (1.7 fl oz)",
+    price: 89.25,
+    category: "Everyday Essentials",
+    closenessRequired: "friend",
+    priority: "High Wish ❤️",
+    imageUrl: "/products/cologne_armani.jpg",
+    url: "https://www.amazon.com/dp/B0DBRGYTDB?th=1",
+    description: "Armani Beauty Stronger With You Intensely: ambery eau de parfum with pink pepper, warm vanilla and amber wood.",
+    claimed: false,
+    claimedBy: "",
+    claimedNote: ""
   }
 ];

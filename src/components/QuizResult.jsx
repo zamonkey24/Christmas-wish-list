@@ -99,6 +99,11 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
           </span>
         </div>
 
+        {recommendation.filled && (
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '14px auto 0', maxWidth: '520px' }}>
+            🎒 Filled up: a mix of big and small gifts that adds up to nearly your whole budget.
+          </p>
+        )}
         {recommendation.widened && (
           <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '14px auto 0', maxWidth: '520px' }}>
             Your budget is bigger than the gifts picked for your tier can reach, so we included a few bigger wishlist items.

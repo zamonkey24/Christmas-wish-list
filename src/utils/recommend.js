@@ -45,6 +45,7 @@ export const formatPrice = (n) => {
 const cents = (n) => Math.round(n * 100) / 100;
 const sum = (items) => cents(items.reduce((s, i) => s + i.price, 0));
 
+const MAX_FILL_ITEMS = 10;
 const MIN_SOLO_SHARE = 0.6; // a flagship gift should use most of the budget
 const MIN_BUNDLE_SHARE = 0.7;
 
@@ -94,9 +95,47 @@ export function getRecommendation(items, { relationship, budget, interests = [],
       return best;
     };
 
+    // "Fill It Up": as many gifts (up to MAX_FILL_ITEMS) as it takes to use the whole budget.
+    // Knapsack over cents: best score among the totals closest to the budget.
+    const fill = () => {
+      const target = Math.round(budget * 100);
+      const maxN = MAX_FILL_ITEMS;
+      const dp = Array.from({ length: maxN + 1 }, () => new Array(target + 1).fill(null));
+      dp[0][0] = { score: 0, idx: [] };
+      const fillable = wantsGiftCard ? affordable : affordable.filter(i => !tagsOf(i).includes('giftcard'));
+      fillable.forEach((item, k) => {
+        const c = Math.round(item.price * 100);
+        const val = itemScore(item) - 0.15; // slight lean toward fewer, bigger gifts
+        for (let n = maxN - 1; n >= 0; n--) {
+          for (let t = target - c; t >= 0; t--) {
+            const prev = dp[n][t];
+            if (!prev) continue;
+            const cand = prev.score + val;
+            const cur = dp[n + 1][t + c];
+            if (!cur || cand > cur.score) dp[n + 1][t + c] = { score: cand, idx: [...prev.idx, k] };
+          }
+        }
+      });
+      let maxT = 0;
+      for (let n = 1; n <= maxN; n++) for (let t = target; t > maxT; t--) if (dp[n][t]) { maxT = t; break; }
+      if (!maxT) return null;
+      const slack = Math.max(500, Math.round(target * 0.03));
+      let best = null;
+      for (let n = 1; n <= maxN; n++) {
+        for (let t = maxT; t >= maxT - slack && t > 0; t--) {
+          const cell = dp[n][t];
+          if (cell && (!best || cell.score > best.score || (cell.score === best.score && t > best.t))) best = { ...cell, t };
+        }
+      }
+      return best && { type: 'bundle', filled: true, items: best.idx.map(k => fillable[k]), score: best.score };
+    };
+
     let result;
     let fellBack = false;
-    if (strategy === 'combo') {
+    if (strategy === 'fill') {
+      result = fill();
+      if (!result) { result = solo(); fellBack = true; }
+    } else if (strategy === 'combo') {
       result = bundle();
       if (!result) { result = solo(); fellBack = true; }
     } else if (strategy === 'solo') {
@@ -107,7 +146,7 @@ export function getRecommendation(items, { relationship, budget, interests = [],
       result = b && b.score > s.score ? b : s;
     }
     const total = sum(result.items);
-    const share = result.type === 'bundle' ? MIN_BUNDLE_SHARE : MIN_SOLO_SHARE;
+    const share = result.filled ? 0.9 : result.type === 'bundle' ? MIN_BUNDLE_SHARE : MIN_SOLO_SHARE;
     return { ...result, total, fellBack, satisfied: total >= budget * share, pool, affordable };
   };
 
@@ -139,6 +178,7 @@ export function getRecommendation(items, { relationship, budget, interests = [],
     runnerUps,
     underBudget: !result.satisfied,
     widened: widened && result.satisfied,
-    fellBack: result.fellBack
+    fellBack: result.fellBack,
+    filled: Boolean(result.filled)
   };
 }

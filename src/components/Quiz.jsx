@@ -317,6 +317,11 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
                   desc: `Combines 2 or 3 items that together fit your $${budget} budget perfectly!` 
                 },
                 { 
+                  id: 'fill', 
+                  title: '🎒 Fill It Up (as many gifts as it takes)', 
+                  desc: `Stacks big and small gifts until your $${budget} is used up.` 
+                },
+                { 
                   id: 'solo', 
                   title: '👑 The Crown Jewel (1 main flagship gift)', 
                   desc: `Highlights 1 top stand-out gift that matches your target budget!` 
