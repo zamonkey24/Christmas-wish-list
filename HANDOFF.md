@@ -64,3 +64,6 @@ Lattafa Maahir Legacy EDP 3.4 oz $26.95 (B0BTPBZD1M, pack of 1 note) and Cremo C
 
 ## Fill It Up + Armani (committed locally, NOT pushed)
 New packaging option "Fill It Up" (strategy 'fill'): knapsack over cents in src/utils/recommend.js picks up to 10 gifts (big and small) totalling as close to the budget as possible, never over, skipping gift cards unless "gift card is fine" is picked; result page shows a note. Added Armani Beauty Stronger With You Intensely EDP 1.7 fl oz $89.25 (B0DBRGYTDB; other sizes on Amazon: 3.4 oz $110.49 B0DBRSBNRZ, 5 oz $127.49 B0DNNGY673), tier 'friend'. DATA_VERSION 9, key v20.
+
+## Le Male (pushed with Fill It Up)
+Added Jean Paul Gaultier Le Male EDT 2.5 oz $105 (B0743HLFH5; 4.2 oz $132 B001BAG38G, 6.8 oz $172 B000XE0N2I), tier 'friend'. DATA_VERSION 10, key v21.

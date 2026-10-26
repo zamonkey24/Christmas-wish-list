@@ -292,5 +292,21 @@ export const DEFAULT_WISHLIST = [
     claimed: false,
     claimedBy: "",
     claimedNote: ""
+  },
+  {
+    id: "g_cologne_lemale",
+    mustGet: "2.5 oz Eau de Toilette",
+    tags: ["fragrance", "luxury"],
+    title: "Jean Paul Gaultier Le Male Eau de Toilette (2.5 oz)",
+    price: 105,
+    category: "Everyday Essentials",
+    closenessRequired: "friend",
+    priority: "High Wish ❤️",
+    imageUrl: "/products/cologne_lemale.jpg",
+    url: "https://www.amazon.com/dp/B0743HLFH5",
+    description: "Jean Paul Gaultier Le Male: amber aromatic cologne with fresh mint, lavender and a sensual vanilla base.",
+    claimed: false,
+    claimedBy: "",
+    claimedNote: ""
   }
 ];
