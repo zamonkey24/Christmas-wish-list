@@ -1,6 +1,7 @@
 export const DEFAULT_WISHLIST = [
   {
     id: "g_duck",
+    tags: ["fun"],
     title: "Giant Inflatable Yellow Duck (Fun Express)",
     price: 22,
     category: "Family",
@@ -15,6 +16,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_amazon_gc",
+    tags: ["giftcard", "practical"],
     title: "Amazon Shopping Gift Card ($50)",
     price: 50,
     category: "Everyday Essentials",
@@ -29,6 +31,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_lotion",
+    tags: ["skin", "practical"],
     mustGet: "AMBER scent",
     title: "BASED Body Lotion with Ceramides - Amber Scent",
     price: 25,
@@ -44,6 +47,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_fpv_drone",
+    tags: ["tech", "fun", "outdoors", "luxury"],
     title: "Mini FPV Drone with HD Camera & First-Person View Kit",
     price: 159,
     category: "Tech & Gadgets",
@@ -58,6 +62,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_bike_strobe",
+    tags: ["outdoors", "tech"],
     title: "Wireless Rechargeable LED Strobe Collision Lights for Bike / Motorcycle",
     price: 14,
     category: "Tech & Gadgets",
@@ -72,6 +77,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_bike_pedals",
+    tags: ["outdoors"],
     mustGet: "WHITE one",
     title: "BORUIZHEN Aluminium Lightweight Mountain Bike Pedals (Anti-Skid)",
     price: 17,
@@ -87,6 +93,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_curl_gel",
+    tags: ["hair"],
     title: "BASED Curl Gel (Definition & Scrunches)",
     price: 20,
     category: "Everyday Essentials",
@@ -101,6 +108,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_curl_mousse",
+    tags: ["hair"],
     title: "BASED Curl Mousse (Definition & Lightweight Hold)",
     price: 18,
     category: "Everyday Essentials",
@@ -115,6 +123,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_moisturizer",
+    tags: ["skin", "practical"],
     title: "BASED Daily Skincare Duo (Purifying Face Wash + Restoring Moisturizer)",
     price: 36,
     category: "Everyday Essentials",
@@ -129,6 +138,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_bodywash",
+    tags: ["skin", "practical"],
     mustGet: "COCONUT scent",
     title: "BASED Performance Body Wash - Coconut Scent (16 fl oz)",
     price: 30,
@@ -144,6 +154,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_curl_cream",
+    tags: ["hair"],
     title: "BASED Curl Cream (Medium Hold, 8.5 oz)",
     price: 18,
     category: "Everyday Essentials",
@@ -158,6 +169,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_hair_elixir",
+    tags: ["hair"],
     title: "BASED Hair Elixir (Weightless Shine Serum)",
     price: 25,
     category: "Everyday Essentials",
@@ -172,6 +184,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_undereye",
+    tags: ["skin"],
     title: "BASED Under Eye Elixir (0.5 fl oz)",
     price: 28,
     category: "Everyday Essentials",
@@ -186,6 +199,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_deodorant",
+    tags: ["practical"],
     mustGet: "BERGAMOT VANILLA scent",
     title: "BASED Performance Deodorant - Bergamot Vanilla",
     price: 18,
@@ -201,6 +215,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_based_skin_elixir",
+    tags: ["skin", "luxury"],
     mustGet: "1 BOTTLE",
     title: "BASED Multi-Active Skin Elixir",
     price: 40,
@@ -216,6 +231,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_cologne",
+    tags: ["fragrance", "luxury"],
     mustGet: "2.5 oz bottle",
     title: "Jean Paul Gaultier Le Beau Eau de Toilette (2.5 oz)",
     price: 110,

@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, ArrowLeft, Heart, Zap, Coffee, Smile, Ticket, Flame, Users, Gift, Star } from 'lucide-react';
+import { Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
+import { INTERESTS, STYLES } from '../utils/recommend';
+
+const optionStyle = (selected) => ({
+  padding: '18px',
+  borderRadius: '14px',
+  background: selected ? 'rgba(251, 191, 36, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+  border: selected ? '2px solid #fbbf24' : '1px solid rgba(255, 255, 255, 0.08)',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease'
+});
 
 export default function Quiz({ onCompleteQuiz, ownerName }) {
   const [step, setStep] = useState(1);
   const [relationship, setRelationship] = useState('friend');
   const [budget, setBudget] = useState(50);
-  const [categoryVibe, setCategoryVibe] = useState('all');
+  const [flex, setFlex] = useState('strict');
+  const [interests, setInterests] = useState([]);
+  const [style, setStyle] = useState('any');
   const [strategy, setStrategy] = useState('combo');
 
-  const totalSteps = 4;
+  const totalSteps = 6;
   const MIN_BUDGET = 15;
   const MAX_BUDGET = 250;
 
@@ -34,7 +46,9 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
       onCompleteQuiz({
         relationship,
         budget: Number(budget),
-        categoryVibe,
+        flex,
+        interests,
+        style,
         strategy
       });
     }
@@ -57,11 +71,11 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
             Step {step} of {totalSteps}
           </span>
           <div style={{ display: 'flex', gap: '6px' }}>
-            {[1, 2, 3, 4].map(s => (
+            {Array.from({ length: totalSteps }, (_, n) => n + 1).map(s => (
               <div 
                 key={s}
                 style={{
-                  width: '32px',
+                  width: '24px',
                   height: '6px',
                   borderRadius: '3px',
                   background: s <= step ? '#fbbf24' : 'rgba(255, 255, 255, 0.1)',
@@ -237,46 +251,49 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
           </div>
         )}
 
-        {/* QUESTION 3: CATEGORY / VIBE */}
+        {/* QUESTION 3: BUDGET FLEXIBILITY */}
         {step === 3 && (
           <div className="animate-fade-in">
             <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>
-              What vibe fits your gift style? ✨
+              How firm is your ${budget} budget? 💵
             </h2>
             <p style={{ color: '#94a3b8', marginBottom: '28px', fontSize: '0.95rem' }}>
-              Pick a category focus or choose 'Surprise Me' to let Santa curate across all options!
+              We'll aim to use most of it, so you're not stuck with a gift that's way under what you wanted to spend.
             </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            <div style={{ display: 'grid', gap: '14px' }}>
               {[
-                { id: 'all', label: '🎲 Surprise Me!', icon: Sparkles, color: '#fbbf24' },
-                { id: 'Family', label: '👨‍👩‍👧 Family & Outings', icon: Users, color: '#e11d48' },
-                { id: 'Tech & Gadgets', label: '⚡ Tech & Gaming', icon: Zap, color: '#38bdf8' },
-                { id: 'Cozy & Home', label: '☕ Cozy & Comfort', icon: Coffee, color: '#f43f5e' },
-                { id: 'Fun & Games', label: '🎮 Games & Toys', icon: Smile, color: '#a855f7' },
-                { id: 'Everyday Essentials', label: '🎒 Gear & Essentials', icon: Star, color: '#f97316' }
-              ].map(v => {
-                const IconComp = v.icon;
-                const isSelected = categoryVibe === v.id;
+                { id: 'strict', title: `Stay at or under $${budget}`, desc: 'Never go over.' },
+                { id: 'over', title: `A little over is fine (up to $${Math.round(budget * 1.15)})`, desc: 'Lets us pick a better match if one is just above.' }
+              ].map(opt => (
+                <div key={opt.id} onClick={() => setFlex(opt.id)} style={optionStyle(flex === opt.id)}>
+                  <strong style={{ fontSize: '1.05rem', color: flex === opt.id ? '#fbbf24' : '#f8fafc', display: 'block', marginBottom: '4px' }}>{opt.title}</strong>
+                  <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>{opt.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* QUESTION 4: INTERESTS (multi-select) */}
+        {step === 4 && (
+          <div className="animate-fade-in">
+            <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>
+              What kind of gifts sound good? ✨
+            </h2>
+            <p style={{ color: '#94a3b8', marginBottom: '28px', fontSize: '0.95rem' }}>
+              Pick as many as you like, or none to be surprised.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+              {INTERESTS.map(v => {
+                const isSelected = interests.includes(v.id);
                 return (
                   <div
                     key={v.id}
-                    onClick={() => setCategoryVibe(v.id)}
-                    style={{
-                      padding: '16px',
-                      borderRadius: '14px',
-                      background: isSelected ? 'rgba(251, 191, 36, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                      border: isSelected ? '2px solid #fbbf24' : '1px solid rgba(255, 255, 255, 0.08)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      transition: 'all 0.2s ease'
-                    }}
+                    onClick={() => setInterests(prev => isSelected ? prev.filter(x => x !== v.id) : [...prev, v.id])}
+                    style={{ ...optionStyle(isSelected), padding: '16px' }}
                   >
-                    <IconComp style={{ width: '20px', height: '20px', color: isSelected ? '#fbbf24' : v.color }} />
                     <span style={{ fontWeight: 600, fontSize: '0.95rem', color: isSelected ? '#fbbf24' : '#e2e8f0' }}>
-                      {v.label}
+                      {isSelected ? '✅ ' : ''}{v.label}
                     </span>
                   </div>
                 );
@@ -285,8 +302,28 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
           </div>
         )}
 
-        {/* QUESTION 4: STRATEGY */}
-        {step === 4 && (
+        {/* QUESTION 5: STYLE */}
+        {step === 5 && (
+          <div className="animate-fade-in">
+            <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>
+              What kind of gift is it? 🎀
+            </h2>
+            <p style={{ color: '#94a3b8', marginBottom: '28px', fontSize: '0.95rem' }}>
+              This helps break ties between gifts at a similar price.
+            </p>
+            <div style={{ display: 'grid', gap: '14px' }}>
+              {STYLES.map(opt => (
+                <div key={opt.id} onClick={() => setStyle(opt.id)} style={optionStyle(style === opt.id)}>
+                  <strong style={{ fontSize: '1.05rem', color: style === opt.id ? '#fbbf24' : '#f8fafc', display: 'block', marginBottom: '4px' }}>{opt.label}</strong>
+                  <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>{opt.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* QUESTION 6: STRATEGY */}
+        {step === 6 && (
           <div className="animate-fade-in">
             <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>
               How should we package your recommendation? 🎁

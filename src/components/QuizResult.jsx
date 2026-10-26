@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ProductLink from './ProductLink';
 import { Sparkles, Gift, ExternalLink, CheckCircle2, RotateCcw, Award, Maximize2, X, Lock, Undo2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { getRecommendation, INTERESTS } from '../utils/recommend';
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80";
 
@@ -19,66 +20,13 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
   const [unclaimPasswordError, setUnclaimPasswordError] = useState(false);
   const [showUnclaimConfirm, setShowUnclaimConfirm] = useState(false);
 
-  const { relationship, budget, categoryVibe, strategy } = quizAnswers;
+  const { budget, interests = [] } = quizAnswers;
 
-  // Filter items by relationship tier
-  const eligibleItems = wishlistItems.filter(item => {
-    if (relationship === 'casual' && item.closenessRequired !== 'casual') return false;
-    if (relationship === 'friend' && item.closenessRequired === 'close') return false;
-    if (categoryVibe !== 'all' && item.category !== categoryVibe) return false;
-    return true;
-  });
-
-  // Calculate recommendation bundle or solo item
-  const getRecommendations = () => {
-    const activeList = eligibleItems.length > 0 ? eligibleItems : wishlistItems;
-
-    // If strategy is combo (bundle of 2-3 items)
-    if (strategy === 'combo' && activeList.length >= 2) {
-      let bestCombo = [];
-      let bestDiff = Infinity;
-
-      for (let i = 0; i < activeList.length; i++) {
-        for (let j = i + 1; j < activeList.length; j++) {
-          const pairSum = activeList[i].price + activeList[j].price;
-          const diff = Math.abs(budget - pairSum);
-          if (diff < bestDiff && pairSum <= budget * 1.25) {
-            bestDiff = diff;
-            bestCombo = [activeList[i], activeList[j]];
-          }
-          for (let k = j + 1; k < activeList.length; k++) {
-            const trioSum = pairSum + activeList[k].price;
-            const trioDiff = Math.abs(budget - trioSum);
-            if (trioDiff < bestDiff && trioSum <= budget * 1.3) {
-              bestDiff = trioDiff;
-              bestCombo = [activeList[i], activeList[j], activeList[k]];
-            }
-          }
-        }
-      }
-
-      if (bestCombo.length > 0) {
-        return { type: 'bundle', items: bestCombo };
-      }
-    }
-
-    // Default to Solo Flagship Item closest to budget
-    const sortedByBudgetFit = [...activeList].sort((a, b) => {
-      const diffA = Math.abs(budget - a.price);
-      const diffB = Math.abs(budget - b.price);
-      return diffA - diffB;
-    });
-
-    const primaryItem = sortedByBudgetFit[0] || wishlistItems[0];
-    return { type: 'solo', items: [primaryItem] };
-  };
-
-  const recommendation = getRecommendations();
+  const recommendation = getRecommendation(wishlistItems, quizAnswers);
   const recommendedItems = recommendation.items;
-  const totalPrice = recommendedItems.reduce((acc, curr) => acc + curr.price, 0);
-
-  // Runner-up suggestions
-  const runnerUps = wishlistItems.filter(item => !recommendedItems.find(r => r.id === item.id)).slice(0, 3);
+  const totalPrice = recommendation.total;
+  const runnerUps = recommendation.runnerUps;
+  const interestLabels = INTERESTS.filter(i => interests.includes(i.id)).map(i => i.label.replace(/^\S+\s/, '').toLowerCase());
 
   const handleOpenClaimModal = (item) => {
     setClaimingItem(item);
@@ -137,7 +85,7 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
           }
         </h2>
         <p style={{ color: '#94a3b8', fontSize: '1rem', maxWidth: '600px', margin: '0 auto 20px' }}>
-          Based on your target budget of <strong>${budget}</strong> and preference for {categoryVibe === 'all' ? 'any vibe' : categoryVibe}, here is what {ownerName || "I"} would love most!
+          Based on your target budget of <strong>${budget}</strong> and interest in {interestLabels.length ? interestLabels.join(', ') : 'anything'}, here is what {ownerName || "I"} would love most!
         </p>
 
         {/* Total Cost Badge */}
@@ -148,6 +96,12 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
             {Math.abs(budget - totalPrice) <= 10 ? '✨ Direct Match' : `${totalPrice > budget ? '+$' + (totalPrice - budget) : '-$' + (budget - totalPrice)} target`}
           </span>
         </div>
+
+        {recommendation.underBudget && (
+          <p style={{ color: '#fbbf24', fontSize: '0.85rem', margin: '14px auto 0', maxWidth: '520px' }}>
+            Nothing on the list is close to ${budget} as a single gift, so this is the closest match. Try "Thoughtful Bundle" to combine items up to your budget.
+          </p>
+        )}
       </div>
 
       {/* Recommended Items Cards with Actual Photos */}
