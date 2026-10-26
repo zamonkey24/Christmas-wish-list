@@ -2,9 +2,9 @@
 
 /* Themes: Christmas is the default; the Birthday theme is set with data-theme="birthday" on <html>. */
 :root {
-  --bg-dark: #07140e;
-  --bg-card: rgba(12, 34, 25, 0.8);
-  --bg-card-hover: rgba(18, 48, 35, 0.88);
+  --bg-dark: #7f1d1d;
+  --bg-card: rgba(9, 38, 26, 0.93);
+  --bg-card-hover: rgba(14, 52, 36, 0.95);
   --border-gold: rgba(245, 158, 11, 0.3);
   --border-subtle: rgba(255, 255, 255, 0.12);
   --accent-gold: #fbbf24;
@@ -17,25 +17,24 @@
   --font-body: 'Plus Jakarta Sans', sans-serif;
 
   --page-bg-image:
-    radial-gradient(circle at 8% 15%, rgba(220, 38, 38, 0.32) 0%, transparent 42%),
-    radial-gradient(circle at 92% 85%, rgba(22, 163, 74, 0.32) 0%, transparent 42%),
-    radial-gradient(circle at 85% 10%, rgba(220, 38, 38, 0.14) 0%, transparent 35%),
-    radial-gradient(circle at 12% 90%, rgba(22, 163, 74, 0.16) 0%, transparent 35%);
+    radial-gradient(ellipse at 50% -10%, rgba(239, 68, 68, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 110%, rgba(40, 6, 8, 0.75) 0%, transparent 60%),
+    linear-gradient(180deg, #b91c1c 0%, #8f1717 50%, #6b1212 100%);
   --accent-bar: linear-gradient(90deg, #dc2626, #fbbf24, #16a34a);
-  --footer-bg: rgba(5, 16, 11, 0.92);
-  --header-bg: rgba(7, 20, 14, 0.9);
-  --header-border: rgba(220, 38, 38, 0.5);
+  --footer-bg: rgba(46, 6, 10, 0.95);
+  --header-bg: rgba(46, 6, 10, 0.94);
+  --header-border: rgba(251, 191, 36, 0.55);
   --logo-bg: linear-gradient(135deg, #dc2626, #7f1d1d);
   --logo-shadow: 0 4px 14px rgba(220, 38, 38, 0.55), 0 0 10px rgba(251, 191, 36, 0.3);
-  --btn-primary-bg: linear-gradient(135deg, #dc2626, #991b1b);
-  --btn-primary-bg-hover: linear-gradient(135deg, #ef4444, #b91c1c);
+  --btn-primary-bg: linear-gradient(135deg, #22c55e, #15803d);
+  --btn-primary-bg-hover: linear-gradient(135deg, #4ade80, #16a34a);
   --btn-primary-color: #fff;
-  --btn-primary-shadow: 0 4px 14px rgba(220, 38, 38, 0.45);
-  --btn-primary-shadow-hover: 0 6px 20px rgba(220, 38, 38, 0.6);
+  --btn-primary-shadow: 0 4px 14px rgba(21, 128, 61, 0.5);
+  --btn-primary-shadow-hover: 0 6px 20px rgba(34, 197, 94, 0.55);
   --card-hover-border: rgba(74, 222, 128, 0.4);
-  --scroll-track: #07140e;
-  --scroll-thumb: #1f4d36;
-  --scroll-thumb-hover: #2d6a4a;
+  --scroll-track: #4a0d0d;
+  --scroll-thumb: #15803d;
+  --scroll-thumb-hover: #22c55e;
 }
 
 :root[data-theme="birthday"] {
@@ -44,7 +43,7 @@
   --bg-card-hover: rgba(30, 29, 35, 0.96);
   --border-subtle: rgba(212, 175, 55, 0.4);
 
-  --page-bg-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1600'%20height='1000'%3E%3Cdefs%3E%3Cfilter%20id='c'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.0035%200.006'%20numOctaves='4'%20seed='3'/%3E%3CfeColorMatrix%20values='0%200%200%200%200.74%20%200%200%200%200%200.77%20%200%200%200%200%200.82%20%200%200%200%20-1.1%200.78'/%3E%3C/filter%3E%3Cfilter%20id='v'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.0035%200.011'%20numOctaves='6'%20seed='11'/%3E%3CfeColorMatrix%20values='0%200%200%200%200.42%20%200%200%200%200%200.45%20%200%200%200%200%200.52%20%201%200%200%200%200'/%3E%3CfeComponentTransfer%3E%3CfeFuncA%20type='table'%20tableValues='0%200%200%200%200%200%200%200%200%200.05%200.5%200.05%200%200%200%200%200%200%200%200%200'/%3E%3C/feComponentTransfer%3E%3CfeGaussianBlur%20stdDeviation='0.7'/%3E%3C/filter%3E%3Cfilter%20id='g'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.0045%200.009'%20numOctaves='5'%20seed='27'/%3E%3CfeColorMatrix%20values='0%200%200%200%200.83%20%200%200%200%200%200.66%20%200%200%200%200%200.2%20%201%200%200%200%200'/%3E%3CfeComponentTransfer%3E%3CfeFuncA%20type='table'%20tableValues='0%200%200%200%200%200%200%200%200%200%200%200%200.85%200%200%200%200%200%200%200%200'/%3E%3C/feComponentTransfer%3E%3CfeGaussianBlur%20stdDeviation='0.5'/%3E%3C/filter%3E%3C/defs%3E%3Crect%20width='100%25'%20height='100%25'%20fill='%23fdfdfb'/%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url(%23c)'/%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url(%23v)'/%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url(%23g)'/%3E%3C/svg%3E");
+  --page-bg-image: url("/marble.jpg");
   --accent-bar: linear-gradient(90deg, #b8860b, #f7d560, #b8860b);
   --footer-bg: rgba(16, 15, 19, 0.95);
   --header-bg: rgba(16, 15, 19, 0.95);
@@ -72,6 +71,7 @@ body {
   background-color: var(--bg-dark);
   background-image: var(--page-bg-image);
   background-size: cover;
+  background-position: center;
   background-attachment: fixed;
   color: var(--text-main);
   font-family: var(--font-body);
