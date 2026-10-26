@@ -10,6 +10,8 @@ import { Lock, KeyRound } from 'lucide-react';
 
 const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v18';
 const OWNER_NAME_STORAGE_KEY = 'festive_gift_quiz_owner_v1';
+const TRASH_STORAGE_KEY = 'festive_gift_quiz_trash_v1';
+const TRASH_DAYS = 30;
 // Bump when DEFAULT_WISHLIST changes: merges new defaults into the shared list, keeping claims and admin-added items.
 const DATA_VERSION = 7;
 const SYNC_URL = '/api/state';
@@ -28,6 +30,13 @@ export default function App() {
       } catch (e) { /* fallback */ }
     }
     return DEFAULT_WISHLIST;
+  });
+
+  const [trash, setTrash] = useState(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(TRASH_STORAGE_KEY));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) { return []; }
   });
 
   const [ownerName, setOwnerName] = useState(() => {
@@ -49,6 +58,10 @@ export default function App() {
     localStorage.setItem(OWNER_NAME_STORAGE_KEY, ownerName);
   }, [ownerName]);
 
+  useEffect(() => {
+    localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trash));
+  }, [trash]);
+
   // Shared state across devices (Netlify Function + Blobs). LocalStorage above is the offline fallback.
   const lastServer = useRef(null);
   const synced = useRef(false);
@@ -58,7 +71,7 @@ export default function App() {
   const knownIds = useRef([]);
   const defaultIds = DEFAULT_WISHLIST.map(i => i.id);
 
-  const serialize = (items, name, version, known) => JSON.stringify({ items, ownerName: name, version, knownIds: known });
+  const serialize = (items, name, version, known, deleted) => JSON.stringify({ items, ownerName: name, version, knownIds: known, trash: deleted ?? [] });
 
   const migrate = (items, known) => {
     const byId = new Map(items.map(i => [i.id, i]));
@@ -74,7 +87,7 @@ export default function App() {
 
   const applyServerState = (state) => {
     const version = state.version ?? 0;
-    lastServer.current = serialize(state.items, state.ownerName, version, state.knownIds);
+    lastServer.current = serialize(state.items, state.ownerName, version, state.knownIds, state.trash);
     if (version < DATA_VERSION) {
       setWishlistItems(migrate(state.items, state.knownIds ?? defaultIds));
       knownIds.current = defaultIds;
@@ -84,6 +97,7 @@ export default function App() {
       knownIds.current = state.knownIds ?? defaultIds;
     }
     setOwnerName(state.ownerName);
+    setTrash(Array.isArray(state.trash) ? state.trash : []);
   };
 
   useEffect(() => {
@@ -95,7 +109,7 @@ export default function App() {
         const state = await res.json();
         if (pending.current) return;
         if (state && Array.isArray(state.items)) {
-          if (serialize(state.items, state.ownerName, state.version ?? 0, state.knownIds) !== lastServer.current) {
+          if (serialize(state.items, state.ownerName, state.version ?? 0, state.knownIds, state.trash) !== lastServer.current) {
             applyServerState(state);
           }
         }
@@ -118,7 +132,7 @@ export default function App() {
 
   useEffect(() => {
     if (!synced.current) return;
-    const body = serialize(wishlistItems, ownerName, DATA_VERSION, knownIds.current.length ? knownIds.current : defaultIds);
+    const body = serialize(wishlistItems, ownerName, DATA_VERSION, knownIds.current.length ? knownIds.current : defaultIds, trash);
     if (body === lastServer.current) return;
     pending.current = true;
     const timer = setTimeout(async () => {
@@ -129,7 +143,7 @@ export default function App() {
       pending.current = false;
     }, 400);
     return () => { clearTimeout(timer); pending.current = false; };
-  }, [wishlistItems, ownerName, syncTick]);
+  }, [wishlistItems, ownerName, trash, syncTick]);
 
   // Handle admin view: require password
   const handleSetView = (view) => {
@@ -195,8 +209,24 @@ export default function App() {
   };
 
   const handleDeleteItem = (id) => {
-    setWishlistItems(prev => prev.filter(item => item.id !== id));
+    const item = wishlistItems.find(i => i.id === id);
+    if (!item) return;
+    const cutoff = Date.now() - TRASH_DAYS * 24 * 60 * 60 * 1000;
+    setWishlistItems(prev => prev.filter(i => i.id !== id));
+    setTrash(prev => [{ ...item, deletedAt: Date.now() }, ...prev.filter(t => t.id !== id && (t.deletedAt ?? 0) > cutoff)]);
   };
+
+  const handleRestoreItem = (id) => {
+    const item = trash.find(t => t.id === id);
+    if (!item) return;
+    const { deletedAt, ...restored } = item; // eslint-disable-line no-unused-vars
+    setWishlistItems(prev => [restored, ...prev.filter(i => i.id !== id)]);
+    setTrash(prev => prev.filter(t => t.id !== id));
+  };
+
+  const handlePurgeItem = (id) => setTrash(prev => prev.filter(t => t.id !== id));
+
+  const handleEmptyTrash = () => setTrash([]);
 
   const handleResetClaims = () => {
     if (window.confirm("Are you sure you want to reset all claimed gifts to available?")) {
@@ -205,7 +235,7 @@ export default function App() {
   };
 
   const handleRestoreDefaults = () => {
-    if (window.confirm("Reset wishlist to your exact 7 curated items?")) {
+    if (window.confirm("Reset the wishlist to the default items? Items you added will be removed.")) {
       setWishlistItems(DEFAULT_WISHLIST);
     }
   };
@@ -318,6 +348,11 @@ export default function App() {
             onAddItem={handleAddItem}
             onUpdateItem={handleUpdateItem}
             onDeleteItem={handleDeleteItem}
+            trash={trash}
+            trashDays={TRASH_DAYS}
+            onRestoreItem={handleRestoreItem}
+            onPurgeItem={handlePurgeItem}
+            onEmptyTrash={handleEmptyTrash}
             onResetClaims={handleResetClaims}
             onRestoreDefaults={handleRestoreDefaults}
             onImportWishlist={handleImportWishlist}
