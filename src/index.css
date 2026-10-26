@@ -2,7 +2,7 @@
 
 /* Themes: Christmas is the default; the Birthday theme is set with data-theme="birthday" on <html>. */
 :root {
-  --bg-dark: #7f1d1d;
+  --bg-dark: #f3f1ec;
   --bg-card: rgba(9, 38, 26, 0.93);
   --bg-card-hover: rgba(14, 52, 36, 0.95);
   --border-gold: rgba(245, 158, 11, 0.3);
@@ -16,10 +16,8 @@
   --font-heading: 'Outfit', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
 
-  --page-bg-image:
-    radial-gradient(ellipse at 50% -10%, rgba(239, 68, 68, 0.55) 0%, transparent 55%),
-    radial-gradient(ellipse at 50% 110%, rgba(40, 6, 8, 0.75) 0%, transparent 60%),
-    linear-gradient(180deg, #b91c1c 0%, #8f1717 50%, #6b1212 100%);
+  --page-bg-image: url("/christmas-room.jpg");
+  --page-bg-pos: center bottom;
   --accent-bar: linear-gradient(90deg, #dc2626, #fbbf24, #16a34a);
   --footer-bg: rgba(46, 6, 10, 0.95);
   --header-bg: rgba(46, 6, 10, 0.94);
@@ -32,7 +30,7 @@
   --btn-primary-shadow: 0 4px 14px rgba(21, 128, 61, 0.5);
   --btn-primary-shadow-hover: 0 6px 20px rgba(34, 197, 94, 0.55);
   --card-hover-border: rgba(74, 222, 128, 0.4);
-  --scroll-track: #4a0d0d;
+  --scroll-track: #efe9df;
   --scroll-thumb: #15803d;
   --scroll-thumb-hover: #22c55e;
 }
@@ -44,6 +42,7 @@
   --border-subtle: rgba(212, 175, 55, 0.4);
 
   --page-bg-image: url("/marble.jpg");
+  --page-bg-pos: center;
   --accent-bar: linear-gradient(90deg, #b8860b, #f7d560, #b8860b);
   --footer-bg: rgba(16, 15, 19, 0.95);
   --header-bg: rgba(16, 15, 19, 0.95);
@@ -71,7 +70,7 @@ body {
   background-color: var(--bg-dark);
   background-image: var(--page-bg-image);
   background-size: cover;
-  background-position: center;
+  background-position: var(--page-bg-pos, center);
   background-attachment: fixed;
   color: var(--text-main);
   font-family: var(--font-body);

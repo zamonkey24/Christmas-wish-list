@@ -49,3 +49,6 @@ src/ThemeContext.jsx defines THEMES (copy, logos as SVG components, favicon, pag
 
 ## Theme polish (committed locally, NOT pushed)
 Birthday background is now a pre-rendered image public/marble.jpg (2000x1200, ~280KB; generated from an SVG feTurbulence/displacement recipe rendered in headless Chrome: grey veins, fine veins, gold veins with glow, cloudy base, grain). Christmas: red page background, deep-green cards, green primary buttons (Next Question etc.), maroon header/footer with gold border.
+
+## Christmas scene background (committed locally, NOT pushed)
+Christmas theme background is now an illustrated room: white walls with wainscoting, window with snowy night + moon + little lit house, white flocked tree with lights/ornaments/star in the corner, presents on a red rug, wreath, garland. Image: public/christmas-room.jpg (2400x1350, ~370KB). Source generators in tools/: christmas-room-gen.py (writes room.svg; render with headless Chrome `--force-device-scale-factor=1.25 --window-size=1920,1080 --screenshot`, then `sips -s format jpeg -s formatOptions 82`) and marble.svg (birthday marble). CSS: --page-bg-image and --page-bg-pos in src/index.css (christmas: center bottom). Cards stay dark green so text stays readable over the light room. Earlier red-background version was replaced.
