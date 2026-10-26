@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-export default function Snowfall() {
+export default function Snowfall({ variant = 'snow' }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -37,8 +37,20 @@ export default function Snowfall() {
       for (let i = 0; i < flakes.length; i++) {
         const f = flakes[i];
         ctx.beginPath();
-        ctx.fillStyle = `rgba(255, 255, 255, ${f.opacity})`;
-        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, false);
+        if (variant === 'sparkle') {
+          // Gold flecks: small diamonds that twinkle as they drift
+          const tw = 0.5 + 0.5 * Math.sin(angle * 3 + i);
+          ctx.fillStyle = `rgba(212, 160, 23, ${f.opacity * (0.4 + 0.6 * tw)})`;
+          const r = f.r * 1.6;
+          ctx.moveTo(f.x, f.y - r);
+          ctx.lineTo(f.x + r * 0.7, f.y);
+          ctx.lineTo(f.x, f.y + r);
+          ctx.lineTo(f.x - r * 0.7, f.y);
+          ctx.closePath();
+        } else {
+          ctx.fillStyle = `rgba(255, 255, 255, ${f.opacity})`;
+          ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, false);
+        }
         ctx.fill();
 
         // Update positions
@@ -67,7 +79,7 @@ export default function Snowfall() {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animId);
     };
-  }, []);
+  }, [variant]);
 
   return (
     <canvas 

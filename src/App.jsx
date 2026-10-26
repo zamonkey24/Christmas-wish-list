@@ -5,12 +5,14 @@ import QuizResult from './components/QuizResult';
 import WishlistGallery from './components/WishlistGallery';
 import AdminWishlist from './components/AdminWishlist';
 import Snowfall from './components/Snowfall';
+import { THEMES, ThemeContext } from './ThemeContext';
 import { DEFAULT_WISHLIST } from './data/initialWishlist';
 import { Lock, KeyRound } from 'lucide-react';
 
 const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v18';
 const OWNER_NAME_STORAGE_KEY = 'festive_gift_quiz_owner_v1';
 const TRASH_STORAGE_KEY = 'festive_gift_quiz_trash_v1';
+const THEME_STORAGE_KEY = 'festive_gift_quiz_theme_v1';
 const TRASH_DAYS = 30;
 // Bump when DEFAULT_WISHLIST changes: merges new defaults into the shared list, keeping claims and admin-added items.
 const DATA_VERSION = 7;
@@ -39,11 +41,20 @@ export default function App() {
     } catch (e) { return []; }
   });
 
+  // ?theme=birthday|christmas previews a look on this device only (not saved or shared).
+  const previewTheme = new URLSearchParams(window.location.search).get('theme');
+  const [theme, setTheme] = useState(() => {
+    if (THEMES[previewTheme]) return previewTheme;
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    return THEMES[saved] ? saved : 'christmas';
+  });
+  const themeConfig = THEMES[theme];
+
   const [ownerName, setOwnerName] = useState(() => {
     return localStorage.getItem(OWNER_NAME_STORAGE_KEY) || 'Arav';
   });
 
-  const [currentView, setCurrentView] = useState('quiz');
+  const [currentView, setCurrentView] = useState(() => (new URLSearchParams(window.location.search).get('view') === 'gallery' ? 'gallery' : 'quiz'));
   const [quizAnswers, setQuizAnswers] = useState(null);
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
@@ -62,6 +73,21 @@ export default function App() {
     localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trash));
   }, [trash]);
 
+  useEffect(() => {
+    if (!THEMES[previewTheme]) localStorage.setItem(THEME_STORAGE_KEY, theme);
+    document.documentElement.dataset.theme = theme;
+    document.title = themeConfig.pageTitle;
+    let icon = document.querySelector("link[rel='icon']");
+    if (!icon) {
+      icon = document.createElement('link');
+      icon.rel = 'icon';
+      document.head.appendChild(icon);
+    }
+    icon.type = 'image/svg+xml';
+    icon.href = themeConfig.favicon;
+    document.querySelector("meta[name='description']")?.setAttribute('content', themeConfig.description);
+  }, [theme, themeConfig, previewTheme]);
+
   // Shared state across devices (Netlify Function + Blobs). LocalStorage above is the offline fallback.
   const lastServer = useRef(null);
   const synced = useRef(false);
@@ -71,7 +97,7 @@ export default function App() {
   const knownIds = useRef([]);
   const defaultIds = DEFAULT_WISHLIST.map(i => i.id);
 
-  const serialize = (items, name, version, known, deleted) => JSON.stringify({ items, ownerName: name, version, knownIds: known, trash: deleted ?? [] });
+  const serialize = (items, name, version, known, deleted, themeId) => JSON.stringify({ items, ownerName: name, version, knownIds: known, trash: deleted ?? [], theme: themeId });
 
   const migrate = (items, known) => {
     const byId = new Map(items.map(i => [i.id, i]));
@@ -87,7 +113,7 @@ export default function App() {
 
   const applyServerState = (state) => {
     const version = state.version ?? 0;
-    lastServer.current = serialize(state.items, state.ownerName, version, state.knownIds, state.trash);
+    lastServer.current = serialize(state.items, state.ownerName, version, state.knownIds, state.trash, state.theme);
     if (version < DATA_VERSION) {
       setWishlistItems(migrate(state.items, state.knownIds ?? defaultIds));
       knownIds.current = defaultIds;
@@ -98,6 +124,7 @@ export default function App() {
     }
     setOwnerName(state.ownerName);
     setTrash(Array.isArray(state.trash) ? state.trash : []);
+    if (THEMES[state.theme] && !THEMES[previewTheme]) setTheme(state.theme);
   };
 
   useEffect(() => {
@@ -109,7 +136,7 @@ export default function App() {
         const state = await res.json();
         if (pending.current) return;
         if (state && Array.isArray(state.items)) {
-          if (serialize(state.items, state.ownerName, state.version ?? 0, state.knownIds, state.trash) !== lastServer.current) {
+          if (serialize(state.items, state.ownerName, state.version ?? 0, state.knownIds, state.trash, state.theme) !== lastServer.current) {
             applyServerState(state);
           }
         }
@@ -132,7 +159,7 @@ export default function App() {
 
   useEffect(() => {
     if (!synced.current) return;
-    const body = serialize(wishlistItems, ownerName, DATA_VERSION, knownIds.current.length ? knownIds.current : defaultIds, trash);
+    const body = serialize(wishlistItems, ownerName, DATA_VERSION, knownIds.current.length ? knownIds.current : defaultIds, trash, theme);
     if (body === lastServer.current) return;
     pending.current = true;
     const timer = setTimeout(async () => {
@@ -143,7 +170,7 @@ export default function App() {
       pending.current = false;
     }, 400);
     return () => { clearTimeout(timer); pending.current = false; };
-  }, [wishlistItems, ownerName, trash, syncTick]);
+  }, [wishlistItems, ownerName, trash, theme, syncTick]);
 
   // Handle admin view: require password
   const handleSetView = (view) => {
@@ -245,8 +272,9 @@ export default function App() {
   };
 
   return (
+    <ThemeContext.Provider value={themeConfig}>
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <Snowfall />
+      <Snowfall variant={themeConfig.particles} />
 
       <Header 
         currentView={currentView}
@@ -358,15 +386,18 @@ export default function App() {
             onImportWishlist={handleImportWishlist}
             ownerName={ownerName}
             onUpdateOwnerName={setOwnerName}
+            theme={theme}
+            onChangeTheme={setTheme}
           />
         )}
       </main>
 
-      <footer style={{ position: 'relative', zIndex: 10, padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '0.85rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(9, 14, 26, 0.9)' }}>
+      <footer style={{ position: 'relative', zIndex: 10, padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '0.85rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', background: 'var(--footer-bg)' }}>
         <p style={{ margin: 0 }}>
-          🎄 <strong>{ownerName}'s Personalized Christmas Wishlist Quiz</strong> • Built with React & Vite
+          {themeConfig.emoji} <strong>{ownerName}'s {themeConfig.footer}</strong> • Built with React & Vite
         </p>
       </footer>
     </div>
+    </ThemeContext.Provider>
   );
 }

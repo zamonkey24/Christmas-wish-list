@@ -1,11 +1,13 @@
 import React from 'react';
-import { Sparkles, Gift, Settings, List, HeartHandshake } from 'lucide-react';
+import { Sparkles, Settings, List, HeartHandshake } from 'lucide-react';
+import { useTheme } from '../ThemeContext';
 
 export default function Header({ currentView, setCurrentView, wishlistItems, ownerName }) {
+  const theme = useTheme();
   const claimedCount = wishlistItems.filter(i => i.claimed).length;
 
   return (
-    <header style={{ position: 'sticky', top: 0, zIndex: 50, padding: '16px 24px', backdropFilter: 'blur(12px)', background: 'rgba(9, 14, 26, 0.85)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+    <header style={{ position: 'sticky', top: 0, zIndex: 50, padding: '16px 24px', backdropFilter: 'blur(12px)', background: 'var(--header-bg)', borderBottom: '1px solid var(--header-border)' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         
         {/* Brand */}
@@ -18,30 +20,30 @@ export default function Header({ currentView, setCurrentView, wishlistItems, own
               width: '46px', 
               height: '46px', 
               borderRadius: '16px', 
-              background: 'linear-gradient(135deg, #e11d48, #be123c)', 
+              background: 'var(--logo-bg)', 
               border: '2px solid #fbbf24',
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
               fontSize: '1.6rem',
-              boxShadow: '0 4px 14px rgba(225, 29, 72, 0.5), 0 0 10px rgba(251, 191, 36, 0.3)',
+              boxShadow: 'var(--logo-shadow)',
               position: 'relative'
             }}
-            title="Santa's Secret Wishlist"
+            title={theme.headerTitle(ownerName)}
           >
-            🎁
+            <theme.Logo size={30} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }} className="gold-gradient-text">
-                {ownerName ? `${ownerName}'s Christmas Quiz` : "My Holiday Wishlist Quiz"}
+                {theme.headerTitle(ownerName)}
               </h1>
               <span className="glass-pill" style={{ padding: '2px 8px', fontSize: '0.7rem', color: '#fbbf24', fontWeight: 600 }}>
-                2026 Edition ❄️
+                {theme.badge}
               </span>
             </div>
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>
-              Answer 4 questions to discover the perfect gift!
+              Answer 5 questions to discover the perfect gift!
             </p>
           </div>
         </div>

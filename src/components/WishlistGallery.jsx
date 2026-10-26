@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Search, Filter, ExternalLink, Gift, CheckCircle2, Sparkles, Lock, KeyRound, X, Undo2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import ProductLink from './ProductLink';
+import { useTheme } from '../ThemeContext';
 
 export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimItem, ownerName, adminPassword }) {
+  const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [claimFilter, setClaimFilter] = useState('all'); // all, available, claimed
@@ -84,10 +86,10 @@ export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimI
     <div style={{ maxWidth: '1140px', margin: '30px auto', padding: '0 20px' }}>
       
       {/* Title & Stats */}
-      <div style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="glass-card" style={{ marginBottom: '28px', padding: '22px 26px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 style={{ fontSize: '2rem', marginBottom: '6px' }} className="gold-gradient-text">
-            {ownerName || "My"} Full Christmas Wishlist 🎁
+            {theme.galleryTitle(ownerName)}
           </h2>
           <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '8px' }}>
             Browse all requested items, filter by budget or category, or claim a gift directly!
@@ -373,7 +375,7 @@ export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimI
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>Claimed By:</span>
                 <span style={{ color: '#10b981', fontWeight: 700, fontSize: '1rem' }}>
-                  {claimDetailsItem.claimedBy || 'Secret Santa'}
+                  {claimDetailsItem.claimedBy || theme.secretGifter}
                 </span>
               </div>
               {claimDetailsItem.claimedNote && (

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
 import { INTERESTS, STYLES } from '../utils/recommend';
+import { useTheme } from '../ThemeContext';
 
 const optionStyle = (selected) => ({
   padding: '18px',
@@ -12,6 +13,7 @@ const optionStyle = (selected) => ({
 });
 
 export default function Quiz({ onCompleteQuiz, ownerName }) {
+  const theme = useTheme();
   const [step, setStep] = useState(1);
   const [relationship, setRelationship] = useState('friend');
   const [budget, setBudget] = useState(50);
@@ -61,7 +63,7 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
       <div className="glass-card animate-fade-in" style={{ padding: '36px', position: 'relative', overflow: 'hidden' }}>
         
         {/* Festive Banner Light Accent */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #e11d48, #fbbf24, #10b981)' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--accent-bar)' }} />
 
         {/* Step Indicator */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
@@ -88,7 +90,7 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
         {step === 1 && (
           <div className="animate-fade-in">
             <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>
-              How do you know {ownerName || "me"}? 🎄
+              How do you know {ownerName || "me"}? {theme.quizEmoji}
             </h2>
             <p style={{ color: '#94a3b8', marginBottom: '28px', fontSize: '0.95rem' }}>
               Pick your relationship so the quiz recommends appropriate gift ideas!
@@ -109,7 +111,7 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
                 { 
                   id: 'close', 
                   title: 'Best Friend, Sibling, or Parent / Immediate Family ❤️', 
-                  desc: 'Looking for a top wishlist item or big main Christmas gift!' 
+                  desc: theme.closeDesc 
                 }
               ].map(opt => (
                 <div
@@ -321,7 +323,7 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
                 },
                 { 
                   id: 'best_fit', 
-                  title: '🔮 Santa\'s Choice (Best overall match)', 
+                  title: theme.bestFitTitle, 
                   desc: 'Automatically calculates the highest rated match regardless of item count.' 
                 }
               ].map(opt => (

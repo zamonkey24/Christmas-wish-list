@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTheme, THEMES } from '../ThemeContext';
 import { Plus, Trash2, Edit2, Download, Upload, RefreshCw, CheckCircle2, User, Gift, Save, Search, Undo2, ExternalLink } from 'lucide-react';
 
 const timeAgo = (ts) => {
@@ -25,8 +26,11 @@ export default function AdminWishlist({
   onRestoreDefaults,
   onImportWishlist, 
   ownerName, 
-  onUpdateOwnerName 
+  onUpdateOwnerName,
+  theme: themeId,
+  onChangeTheme
 }) {
+  const theme = useTheme();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingItemId, setEditingItemId] = useState(null);
   const [tempOwnerName, setTempOwnerName] = useState(ownerName || '');
@@ -157,7 +161,7 @@ export default function AdminWishlist({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h2 style={{ fontSize: '1.8rem', margin: 0 }} className="gold-gradient-text">
-              Santa's Workshop & Wishlist Admin 🛠️
+              {theme.adminTitle}
             </h2>
             <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '4px' }}>
               Add, edit, or customize all items on your holiday wishlist.
@@ -206,6 +210,32 @@ export default function AdminWishlist({
             <Save style={{ width: '14px', height: '14px' }} />
             Save Name
           </button>
+        </div>
+
+        {/* Site Theme */}
+        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ fontSize: '0.9rem', color: '#cbd5e1', fontWeight: 600, marginBottom: '10px' }}>Site Background & Theme (updates for everyone):</div>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            {Object.values(THEMES).map(t => {
+              const active = themeId === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => onChangeTheme(t.id)}
+                  style={{ flex: '1 1 220px', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '14px', cursor: 'pointer', textAlign: 'left', color: '#f8fafc', background: active ? 'rgba(251, 191, 36, 0.14)' : 'rgba(255, 255, 255, 0.04)', border: active ? '2px solid #fbbf24' : '1px solid rgba(255, 255, 255, 0.12)' }}
+                >
+                  <t.Logo size={34} />
+                  <span>
+                    <strong style={{ display: 'block', fontSize: '1rem' }}>{t.emoji} {t.name}{active ? ' (live)' : ''}</strong>
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                      {t.id === 'birthday' ? 'White marble, gold, sparkles' : 'Red & green, snowfall'}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -376,7 +406,7 @@ export default function AdminWishlist({
                   <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.4, margin: '0 0 10px' }}>{item.description}</p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '0.75rem' }}>
                     {item.claimed ? (
-                      <span style={{ color: '#10b981', fontWeight: 700 }}>✅ Claimed by {item.claimedBy || 'Secret Santa'}</span>
+                      <span style={{ color: '#10b981', fontWeight: 700 }}>✅ Claimed by {item.claimedBy || theme.secretGifter}</span>
                     ) : (
                       <span style={{ color: '#94a3b8' }}>Available</span>
                     )}

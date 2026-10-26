@@ -3,10 +3,12 @@ import ProductLink from './ProductLink';
 import { Sparkles, Gift, ExternalLink, CheckCircle2, RotateCcw, Award, Maximize2, X, Lock, Undo2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getRecommendation, INTERESTS } from '../utils/recommend';
+import { useTheme } from '../ThemeContext';
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80";
 
 export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, onUnclaimItem, onRetakeQuiz, ownerName, adminPassword }) {
+  const theme = useTheme();
   const [claimingItem, setClaimingItem] = useState(null);
   const [claimerName, setClaimerName] = useState('');
   const [claimNote, setClaimNote] = useState('');
@@ -75,13 +77,13 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
       <div className="glass-card animate-fade-in" style={{ padding: '36px', textAlign: 'center', marginBottom: '32px', background: 'radial-gradient(circle at center, rgba(225, 29, 72, 0.18) 0%, rgba(15, 23, 42, 0.85) 100%)' }}>
         <div style={{ inlineSize: 'fit-content', margin: '0 auto 16px', padding: '8px 16px', background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#fbbf24', fontSize: '0.85rem', fontWeight: 700 }}>
           <Sparkles style={{ width: '16px', height: '16px' }} />
-          SANTA'S GIFT MATCH ENGINE
+          {theme.matcher}
         </div>
 
         <h2 style={{ fontSize: '2.2rem', marginBottom: '12px' }} className="gold-gradient-text">
           {recommendation.type === 'bundle' 
-            ? `Curated ${recommendedItems.length}-Item Christmas Gift Bundle!`
-            : `Your Top Matched Christmas Gift!`
+            ? theme.bundleTitle(recommendedItems.length)
+            : theme.soloTitle
           }
         </h2>
         <p style={{ color: '#94a3b8', fontSize: '1rem', maxWidth: '600px', margin: '0 auto 20px' }}>
@@ -210,7 +212,7 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
 
       {/* Runner Up Options Section */}
       {runnerUps.length > 0 && (
-        <div style={{ marginTop: '40px', paddingTop: '30px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div className="glass-card" style={{ marginTop: '40px', padding: '24px' }}>
           <h3 style={{ fontSize: '1.3rem', marginBottom: '16px', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Award style={{ width: '20px', height: '20px', color: '#fbbf24' }} />
             Other Alternate Wishlist Gifts You Can Pick
@@ -258,7 +260,7 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
 
       {/* Retake Quiz Footer CTA */}
       <div style={{ textAlign: 'center', marginTop: '40px' }}>
-        <button onClick={onRetakeQuiz} className="festive-btn-secondary">
+        <button onClick={onRetakeQuiz} className="festive-btn-secondary" style={{ background: 'var(--bg-card)' }}>
           <RotateCcw style={{ width: '16px', height: '16px' }} />
           Retake Quiz with Different Budget or Vibe
         </button>
@@ -314,7 +316,7 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
                 </label>
                 <input 
                   type="text"
-                  placeholder="e.g. Aunt Sarah or Cousin Leo 🎅"
+                  placeholder={theme.claimerPlaceholder}
                   value={claimerName}
                   onChange={(e) => setClaimerName(e.target.value)}
                   style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff', fontSize: '0.95rem', outline: 'none' }}
@@ -323,11 +325,11 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '6px', fontWeight: 600 }}>
-                  Optional Note / Warm Holiday Message
+                  {theme.messageLabel}
                 </label>
                 <textarea 
                   rows={3}
-                  placeholder="e.g. Got this for you! Merry Christmas!"
+                  placeholder={theme.messagePlaceholder}
                   value={claimNote}
                   onChange={(e) => setClaimNote(e.target.value)}
                   style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff', fontSize: '0.9rem', outline: 'none', resize: 'none' }}
@@ -387,7 +389,7 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>Claimed By:</span>
                 <span style={{ color: '#10b981', fontWeight: 700, fontSize: '1rem' }}>
-                  {claimDetailsItem.claimedBy || 'Secret Santa'}
+                  {claimDetailsItem.claimedBy || theme.secretGifter}
                 </span>
               </div>
               {claimDetailsItem.claimedNote && (
