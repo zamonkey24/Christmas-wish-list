@@ -55,3 +55,6 @@ Christmas theme background is now an illustrated room: white walls with wainscot
 
 ## Real marble photo (committed locally, NOT pushed)
 Birthday background is now a real photo: "Calacatta Gold QUADRA.jpg" by Irvanderss, Wikimedia Commons, CC BY-SA 4.0 (https://commons.wikimedia.org/wiki/File:Calacatta_Gold_QUADRA.jpg). Cropped to the slab face (1770x870) and retouched to remove warehouse-light reflections (tools/marble-retouch.py, Pillow+numpy). Attribution line is shown in the footer in the birthday theme (src/App.jsx) - keep it, the license requires credit. Unsplash/Pexels block scripted downloads, so Wikimedia Commons API was used. The earlier generated marble SVG recipe is still in tools/marble.svg (unused).
+
+## Two more colognes (committed locally, NOT pushed)
+Lattafa Maahir Legacy EDP 3.4 oz $26.95 (B0BTPBZD1M, pack of 1 note) and Cremo Cologne Spice & Black Vanilla 3.4 fl oz $21.26 (B079C2P64T; page has many scents, pop-up says which). Prices read from the Amazon listings at add time. DATA_VERSION 8, key v19.

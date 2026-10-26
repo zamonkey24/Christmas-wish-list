@@ -244,5 +244,37 @@ export const DEFAULT_WISHLIST = [
     claimed: false,
     claimedBy: "",
     claimedNote: ""
+  },
+  {
+    id: "g_cologne_lattafa",
+    mustGet: "3.4 oz, pack of 1",
+    tags: ["fragrance", "luxury"],
+    title: "Lattafa Maahir Legacy Eau de Parfum (3.4 oz)",
+    price: 26.95,
+    category: "Everyday Essentials",
+    closenessRequired: "casual",
+    priority: "High Wish ❤️",
+    imageUrl: "/products/cologne_lattafa.jpg",
+    url: "https://www.amazon.com/dp/B0BTPBZD1M?th=1",
+    description: "Lattafa Maahir Legacy men's eau de parfum: aromatic, spicy, citrus and amber wood.",
+    claimed: false,
+    claimedBy: "",
+    claimedNote: ""
+  },
+  {
+    id: "g_cologne_cremo",
+    mustGet: "Spice & Black Vanilla",
+    tags: ["fragrance"],
+    title: "Cremo Cologne - Spice & Black Vanilla (3.4 fl oz)",
+    price: 21.26,
+    category: "Everyday Essentials",
+    closenessRequired: "casual",
+    priority: "High Wish ❤️",
+    imageUrl: "/products/cologne_cremo.jpg",
+    url: "https://www.amazon.com/dp/B079C2P64T?th=1",
+    description: "Cremo men's cologne spray with vibrant spice and black vanilla, notes of dark woods.",
+    claimed: false,
+    claimedBy: "",
+    claimedNote: ""
   }
 ];
