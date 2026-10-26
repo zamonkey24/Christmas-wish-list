@@ -396,6 +396,12 @@ export default function App() {
         <p style={{ margin: 0 }}>
           {themeConfig.emoji} <strong>{ownerName}'s {themeConfig.footer}</strong> • Built with React & Vite
         </p>
+        {theme === 'birthday' && (
+          <p style={{ margin: '6px 0 0', fontSize: '0.75rem', opacity: 0.8 }}>
+            Marble photo: <a href="https://commons.wikimedia.org/wiki/File:Calacatta_Gold_QUADRA.jpg" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>Calacatta Gold</a> by Irvanderss,{' '}
+            <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>CC BY-SA 4.0</a> (cropped and retouched)
+          </p>
+        )}
       </footer>
     </div>
     </ThemeContext.Provider>
