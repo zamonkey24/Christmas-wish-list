@@ -54,24 +54,34 @@ export default function App() {
   const synced = useRef(false);
   const pending = useRef(false);
 
-  const serialize = (items, name, version) => JSON.stringify({ items, ownerName: name, version });
+  // Default item ids already offered to the shared list; deleted ones must not come back on a version bump.
+  const knownIds = useRef([]);
+  const defaultIds = DEFAULT_WISHLIST.map(i => i.id);
 
-  const migrate = (items) => {
+  const serialize = (items, name, version, known) => JSON.stringify({ items, ownerName: name, version, knownIds: known });
+
+  const migrate = (items, known) => {
     const byId = new Map(items.map(i => [i.id, i]));
-    const merged = DEFAULT_WISHLIST.map(def => {
+    const merged = [];
+    DEFAULT_WISHLIST.forEach(def => {
       const old = byId.get(def.id);
-      return old ? { ...def, claimed: old.claimed, claimedBy: old.claimedBy, claimedNote: old.claimedNote } : def;
+      if (old) merged.push({ ...def, claimed: old.claimed, claimedBy: old.claimedBy, claimedNote: old.claimedNote });
+      else if (!known.includes(def.id)) merged.push(def);
     });
     const adminAdded = items.filter(i => /^g_\d+$/.test(i.id));
     return [...adminAdded, ...merged];
   };
 
   const applyServerState = (state) => {
-    lastServer.current = serialize(state.items, state.ownerName, state.version ?? 0);
-    if ((state.version ?? 0) < DATA_VERSION) {
-      setWishlistItems(migrate(state.items)); // differs from lastServer, so the push effect saves it
+    const version = state.version ?? 0;
+    lastServer.current = serialize(state.items, state.ownerName, version, state.knownIds);
+    if (version < DATA_VERSION) {
+      setWishlistItems(migrate(state.items, state.knownIds ?? []));
+      knownIds.current = defaultIds;
     } else {
       setWishlistItems(state.items);
+      // Older saved state has no record: everything missing from the list was deleted on purpose.
+      knownIds.current = state.knownIds ?? defaultIds;
     }
     setOwnerName(state.ownerName);
   };
@@ -85,7 +95,7 @@ export default function App() {
         const state = await res.json();
         if (pending.current) return;
         if (state && Array.isArray(state.items)) {
-          if (serialize(state.items, state.ownerName, state.version ?? 0) !== lastServer.current) {
+          if (serialize(state.items, state.ownerName, state.version ?? 0, state.knownIds) !== lastServer.current) {
             applyServerState(state);
           }
         }
@@ -108,7 +118,7 @@ export default function App() {
 
   useEffect(() => {
     if (!synced.current) return;
-    const body = serialize(wishlistItems, ownerName, DATA_VERSION);
+    const body = serialize(wishlistItems, ownerName, DATA_VERSION, knownIds.current.length ? knownIds.current : defaultIds);
     if (body === lastServer.current) return;
     pending.current = true;
     const timer = setTimeout(async () => {

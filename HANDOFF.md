@@ -33,3 +33,6 @@ Removed again at owner's request: Daily Facial Cleanser, Daily Facial Moisturize
 
 ## Cologne (committed locally, NOT pushed)
 Added Jean Paul Gaultier Le Beau EDT 2.5 oz, $110 (Amazon price verified; $104.50 w/ Subscribe & Save), B07TK11FQN, 'Please get 2.5 oz bottle' pop-up. closenessRequired 'friend'. DATA_VERSION 6, key v17.
+
+## Fix: deleted items coming back (committed locally, NOT pushed)
+Cause: bumping DATA_VERSION ran migrate(), which re-added every DEFAULT_WISHLIST item missing from the shared list, including ones the owner deleted. Now the shared state stores `knownIds` (default ids already offered); migrate only adds defaults not in knownIds. State saved before this fix has no knownIds, so it is treated as "everything missing was deleted on purpose". Did not bump DATA_VERSION. If the drone is still present on the server, owner must delete it once more after deploy.
