@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ProductLink from './ProductLink';
 import { Sparkles, Gift, ExternalLink, CheckCircle2, RotateCcw, Award, Maximize2, X, Lock, Undo2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { getRecommendation, INTERESTS } from '../utils/recommend';
+import { getRecommendation, INTERESTS, formatPrice } from '../utils/recommend';
 import { useTheme } from '../ThemeContext';
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80";
@@ -87,18 +87,28 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
           }
         </h2>
         <p style={{ color: '#94a3b8', fontSize: '1rem', maxWidth: '600px', margin: '0 auto 20px' }}>
-          Based on your target budget of <strong>${budget}</strong> and interest in {interestLabels.length ? interestLabels.join(', ') : 'anything'}, here is what {ownerName || "I"} would love most!
+          Based on your target budget of <strong>${formatPrice(budget)}</strong> and interest in {interestLabels.length ? interestLabels.join(', ') : 'anything'}, here is what {ownerName || "I"} would love most!
         </p>
 
         {/* Total Cost Badge */}
         <div className="glass-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', padding: '10px 24px' }}>
           <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Total Cost:</span>
-          <strong style={{ color: '#10b981', fontSize: '1.4rem' }}>${totalPrice}</strong>
+          <strong style={{ color: '#10b981', fontSize: '1.4rem' }}>${formatPrice(totalPrice)}</strong>
           <span style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '6px', background: Math.abs(budget - totalPrice) <= 15 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(251, 191, 36, 0.2)', color: Math.abs(budget - totalPrice) <= 15 ? '#10b981' : '#fbbf24' }}>
-            {Math.abs(budget - totalPrice) <= 10 ? '✨ Direct Match' : `${totalPrice > budget ? '+$' + (totalPrice - budget) : '-$' + (budget - totalPrice)} target`}
+            {budget - totalPrice <= 10 ? '✨ Direct Match' : `$${formatPrice(budget - totalPrice)} under budget`}
           </span>
         </div>
 
+        {recommendation.widened && (
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '14px auto 0', maxWidth: '520px' }}>
+            Your budget is bigger than the gifts picked for your tier can reach, so we included a few bigger wishlist items.
+          </p>
+        )}
+        {recommendation.fellBack && (
+          <p style={{ color: '#fbbf24', fontSize: '0.85rem', margin: '14px auto 0', maxWidth: '520px' }}>
+            We couldn't build a bundle close to ${budget}, so this is the closest single gift instead.
+          </p>
+        )}
         {recommendation.underBudget && (
           <p style={{ color: '#fbbf24', fontSize: '0.85rem', margin: '14px auto 0', maxWidth: '520px' }}>
             Nothing on the list is close to ${budget} as a single gift, so this is the closest match. Try "Thoughtful Bundle" to combine items up to your budget.

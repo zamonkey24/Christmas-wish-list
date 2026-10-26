@@ -58,3 +58,6 @@ Birthday background is now a real photo: "Calacatta Gold QUADRA.jpg" by Irvander
 
 ## Two more colognes (committed locally, NOT pushed)
 Lattafa Maahir Legacy EDP 3.4 oz $26.95 (B0BTPBZD1M, pack of 1 note) and Cremo Cologne Spice & Black Vanilla 3.4 fl oz $21.26 (B079C2P64T; page has many scents, pop-up says which). Prices read from the Amazon listings at add time. DATA_VERSION 8, key v19.
+
+## Quiz fixes (committed locally, NOT pushed)
+1) Float bug: totals showed e.g. 207.20999999999998 and "-$42.79000000000002 target". Now sums are rounded to cents (recommend.js `sum`/`cents`) and shown via `formatPrice`; badge says "$X under budget". 2) Distant friend + $250 + bundle fell back to a lone gift card: casual-tier items can't reach the budget. getRecommendation now escalates tiers (casual -> +friend -> +close; friend -> +close) until the result uses enough of the budget, shows a note when widened, and shows a note if a bundle couldn't be built (fellBack). Gift cards get a -2.5 score penalty unless the "gift card is fine" interest is picked. MIN_BUNDLE_SHARE lowered to 0.7. Tested 252 combos: never over budget.
