@@ -1,9 +1,9 @@
 // Gift matching for the quiz. Budget fit comes first; interests and style break ties.
 
 export const INTERESTS = [
-  { id: 'hair', label: '💇 Hair care & styling' },
-  { id: 'skin', label: '🧴 Skincare & body care' },
-  { id: 'fragrance', label: '🌲 Cologne & fragrance' },
+  { id: 'hair', hot: true, label: '💇 Hair care & styling' },
+  { id: 'skin', hot: true, label: '🧴 Skincare & body care' },
+  { id: 'fragrance', hot: true, label: '🌲 Cologne & fragrance' },
   { id: 'outdoors', label: '🚲 Bikes & outdoors' },
   { id: 'tech', label: '⚡ Tech & gadgets' },
   { id: 'fun', label: '🎉 Fun, games & family stuff' },

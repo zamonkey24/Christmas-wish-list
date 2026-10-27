@@ -14,7 +14,7 @@ const optionStyle = (selected) => ({
 
 export default function Quiz({ onCompleteQuiz, ownerName }) {
   const theme = useTheme();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(() => Number(new URLSearchParams(window.location.search).get('step')) || 1); // ?step=3 jumps ahead (preview)
   const [relationship, setRelationship] = useState('friend');
   const [budget, setBudget] = useState(50);
   const [interests, setInterests] = useState([]);
@@ -269,8 +269,15 @@ export default function Quiz({ onCompleteQuiz, ownerName }) {
                     onClick={() => setInterests(prev => isSelected ? prev.filter(x => x !== v.id) : [...prev, v.id])}
                     style={{ ...optionStyle(isSelected), padding: '16px' }}
                   >
-                    <span style={{ fontWeight: 600, fontSize: '0.95rem', color: isSelected ? '#fbbf24' : '#e2e8f0' }}>
-                      {isSelected ? '✅ ' : ''}{v.label}
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'nowrap' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.95rem', color: isSelected ? '#fbbf24' : '#e2e8f0' }}>
+                        {isSelected ? '✅ ' : ''}{v.label}
+                      </span>
+                      {v.hot && (
+                        <span style={{ fontSize: '0.64rem', fontWeight: 700, color: '#1a1405', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', padding: '2px 7px', borderRadius: '9999px', whiteSpace: 'nowrap' }}>
+                          🔥 Highly wanted
+                        </span>
+                      )}
                     </span>
                   </div>
                 );
