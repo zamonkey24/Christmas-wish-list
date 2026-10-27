@@ -311,6 +311,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_cologne_sauvage",
+    addedIn: 13,
     mustGet: "3.4 oz Eau de Toilette",
     tags: ["fragrance", "luxury"],
     title: "Dior Sauvage Eau de Toilette (3.4 oz)",
@@ -327,6 +328,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_cologne_dylanblue",
+    addedIn: 13,
     mustGet: "3.4 oz Eau de Toilette",
     tags: ["fragrance"],
     title: "Versace Pour Homme Dylan Blue Eau de Toilette (3.4 oz)",
@@ -343,6 +345,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_cologne_azzaro_set",
+    addedIn: 13,
     tags: ["fragrance"],
     title: "Azzaro The Most Wanted Cologne Discovery Set (3-Piece)",
     price: 43,
@@ -358,6 +361,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_cologne_asad",
+    addedIn: 13,
     mustGet: "3.4 oz",
     tags: ["fragrance"],
     title: "Lattafa Asad Eau de Parfum (3.4 oz)",
@@ -374,6 +378,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_cologne_khamrah",
+    addedIn: 13,
     tags: ["fragrance"],
     title: "Lattafa Khamrah Eau de Parfum (3.4 oz)",
     price: 35,
@@ -389,6 +394,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_cologne_cdnintense",
+    addedIn: 13,
     mustGet: "3.6 oz Eau de Toilette",
     tags: ["fragrance"],
     title: "Armaf Club de Nuit Intense Man Eau de Toilette (3.6 oz)",
@@ -405,6 +411,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_sunscreen_mini",
+    addedIn: 13,
     mustGet: "0.68 fl oz size",
     tags: ["skin", "practical"],
     title: "Supergoop! Unseen Sunscreen SPF 50 (0.68 fl oz mini)",
@@ -421,6 +428,7 @@ export const DEFAULT_WISHLIST = [
   },
   {
     id: "g_giftcard_ulta",
+    addedIn: 13,
     mustGet: "$25 amount",
     tags: ["giftcard"],
     title: "Ulta Beauty Gift Card ($25)",

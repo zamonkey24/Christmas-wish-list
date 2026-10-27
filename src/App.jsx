@@ -9,14 +9,14 @@ import { THEMES, ThemeContext } from './ThemeContext';
 import { DEFAULT_WISHLIST } from './data/initialWishlist';
 import { Lock, KeyRound } from 'lucide-react';
 
-const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v23';
+const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v24';
 const OWNER_NAME_STORAGE_KEY = 'festive_gift_quiz_owner_v1';
 const TRASH_STORAGE_KEY = 'festive_gift_quiz_trash_v1';
 const ROTATION_STORAGE_KEY = 'festive_gift_quiz_rotation_v1';
 const THEME_STORAGE_KEY = 'festive_gift_quiz_theme_v1';
 const TRASH_DAYS = 30;
 // Bump when DEFAULT_WISHLIST changes: merges new defaults into the shared list, keeping claims and admin-added items.
-const DATA_VERSION = 12;
+const DATA_VERSION = 13;
 const SYNC_URL = '/api/state';
 const POLL_MS = 15000;
 const ADMIN_PASSWORD = '01015';
@@ -99,13 +99,16 @@ export default function App() {
 
   const serialize = (items, name, version, known, deleted, themeId) => JSON.stringify({ items, ownerName: name, version, knownIds: known, trash: deleted ?? [], theme: themeId });
 
-  const migrate = (items, known) => {
+  // When DATA_VERSION goes up, refresh default items and add the ones introduced after the saved version
+  // (`addedIn` on an item in initialWishlist.js). Defaults missing from an older list were deleted on purpose.
+  // When adding new default items: bump DATA_VERSION and give each new item addedIn: <the new version>.
+  const migrate = (items, savedVersion) => {
     const byId = new Map(items.map(i => [i.id, i]));
     const merged = [];
     DEFAULT_WISHLIST.forEach(def => {
       const old = byId.get(def.id);
       if (old) merged.push({ ...def, claimed: old.claimed, claimedBy: old.claimedBy, claimedNote: old.claimedNote });
-      else if (!known.includes(def.id)) merged.push(def);
+      else if ((def.addedIn ?? 0) > savedVersion) merged.push(def);
     });
     const adminAdded = items.filter(i => /^g_\d+$/.test(i.id));
     return [...adminAdded, ...merged];
@@ -115,7 +118,7 @@ export default function App() {
     const version = state.version ?? 0;
     lastServer.current = serialize(state.items, state.ownerName, version, state.knownIds, state.trash, state.theme);
     if (version < DATA_VERSION) {
-      setWishlistItems(migrate(state.items, state.knownIds ?? defaultIds));
+      setWishlistItems(migrate(state.items, version));
       knownIds.current = defaultIds;
     } else {
       setWishlistItems(state.items);
