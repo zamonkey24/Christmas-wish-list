@@ -9,14 +9,14 @@ import { THEMES, ThemeContext } from './ThemeContext';
 import { DEFAULT_WISHLIST } from './data/initialWishlist';
 import { Lock, KeyRound } from 'lucide-react';
 
-const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v22';
+const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v23';
 const OWNER_NAME_STORAGE_KEY = 'festive_gift_quiz_owner_v1';
 const TRASH_STORAGE_KEY = 'festive_gift_quiz_trash_v1';
 const ROTATION_STORAGE_KEY = 'festive_gift_quiz_rotation_v1';
 const THEME_STORAGE_KEY = 'festive_gift_quiz_theme_v1';
 const TRASH_DAYS = 30;
 // Bump when DEFAULT_WISHLIST changes: merges new defaults into the shared list, keeping claims and admin-added items.
-const DATA_VERSION = 11;
+const DATA_VERSION = 12;
 const SYNC_URL = '/api/state';
 const POLL_MS = 15000;
 const ADMIN_PASSWORD = '01015';

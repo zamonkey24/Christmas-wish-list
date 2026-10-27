@@ -77,3 +77,6 @@ Ties: when several gifts score exactly the same (e.g. $18 Curl Mousse / Curl Cre
 
 ## 'Highly wanted' badges (committed locally, NOT pushed)
 Quiz step 3: hair, skin and fragrance interests (INTERESTS[].hot in src/utils/recommend.js) show a gold '🔥 Highly wanted' badge next to the label. ?step=N preview param added to Quiz (like ?theme= and ?view=gallery).
+
+## 8 more gifts (committed locally, NOT pushed)
+Dior Sauvage EDT 3.4oz $131 (B000RO0NOW), Versace Dylan Blue EDT 3.4oz $56 (B01JG5V0E4), Azzaro The Most Wanted 3-piece Discovery Set $43 (B0G5B5GD4T), Lattafa Asad $27 (B0B8TQ7YRW), Lattafa Khamrah $35 (B0B92Y18GT), Armaf Club de Nuit Intense Man EDT 3.6oz $31 (B07XFSH553, third-party seller), Supergoop Unseen Sunscreen 0.68oz $19 (B0DPNKSQ9C), Ulta Beauty $25 gift card (B0H4FWYHYL). Prices rounded to whole dollars from the Amazon listing prices at add time. Skipped: Bleu de Chanel (real EDT not found on Amazon search) and drone batteries (APEX VR70 battery compatibility with the APEX kit could not be confirmed). 28 items total. DATA_VERSION 12, key v23.
