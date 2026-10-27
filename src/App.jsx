@@ -12,6 +12,7 @@ import { Lock, KeyRound } from 'lucide-react';
 const WISHLIST_STORAGE_KEY = 'festive_gift_quiz_items_v22';
 const OWNER_NAME_STORAGE_KEY = 'festive_gift_quiz_owner_v1';
 const TRASH_STORAGE_KEY = 'festive_gift_quiz_trash_v1';
+const ROTATION_STORAGE_KEY = 'festive_gift_quiz_rotation_v1';
 const THEME_STORAGE_KEY = 'festive_gift_quiz_theme_v1';
 const TRASH_DAYS = 30;
 // Bump when DEFAULT_WISHLIST changes: merges new defaults into the shared list, keeping claims and admin-added items.
@@ -91,7 +92,6 @@ export default function App() {
   // Shared state across devices (Netlify Function + Blobs). LocalStorage above is the offline fallback.
   const lastServer = useRef(null);
   const synced = useRef(false);
-  const pending = useRef(false);
 
   // Default item ids already offered to the shared list; deleted ones must not come back on a version bump.
   const knownIds = useRef([]);
@@ -127,15 +127,32 @@ export default function App() {
     if (THEMES[state.theme] && !THEMES[previewTheme]) setTheme(state.theme);
   };
 
+  // Latest local state, readable from timers and fetch callbacks.
+  const latest = useRef({});
+  latest.current = { wishlistItems, ownerName, trash, theme };
+  const localBody = () => {
+    const l = latest.current;
+    return serialize(l.wishlistItems, l.ownerName, DATA_VERSION, knownIds.current.length ? knownIds.current : defaultIds, l.trash, l.theme);
+  };
+
+  const saveTimer = useRef(null); // a local change is waiting to be saved
+  const saving = useRef(false);   // a save request is in flight
+  const lastWriteAt = useRef(0);  // server timestamp of our newest save; older copies are stale
+  const writeSeq = useRef(0);     // bumps around every save, so stale reads can be recognised
+
   useEffect(() => {
     const pull = async () => {
-      if (pending.current) return;
+      if (saveTimer.current || saving.current) return;
+      const seq = writeSeq.current;
       try {
         const res = await fetch(SYNC_URL, { cache: 'no-store' });
         if (!res.ok) return;
         const state = await res.json();
-        if (pending.current) return;
-        if (state && Array.isArray(state.items)) {
+        // Ignore a read that raced with a local change or save: it could be older than what we just did.
+        if (saveTimer.current || saving.current || seq !== writeSeq.current) return;
+        if (state?.updatedAt && state.updatedAt < lastWriteAt.current) return; // older than our own save
+        const unsavedLocal = lastServer.current !== null && localBody() !== lastServer.current;
+        if (state && Array.isArray(state.items) && !unsavedLocal) {
           if (serialize(state.items, state.ownerName, state.version ?? 0, state.knownIds, state.trash, state.theme) !== lastServer.current) {
             applyServerState(state);
           }
@@ -152,6 +169,7 @@ export default function App() {
     return () => {
       clearInterval(timer);
       document.removeEventListener('visibilitychange', onVisible);
+      clearTimeout(saveTimer.current);
     };
   }, []);
 
@@ -159,17 +177,30 @@ export default function App() {
 
   useEffect(() => {
     if (!synced.current) return;
-    const body = serialize(wishlistItems, ownerName, DATA_VERSION, knownIds.current.length ? knownIds.current : defaultIds, trash, theme);
-    if (body === lastServer.current) return;
-    pending.current = true;
-    const timer = setTimeout(async () => {
+    if (localBody() === lastServer.current) return;
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      saveTimer.current = null;
+      const body = localBody(); // newest state at the moment of saving
+      if (body === lastServer.current) return;
+      saving.current = true;
+      writeSeq.current++;
+      let ok = false;
       try {
         const res = await fetch(SYNC_URL, { method: 'PUT', headers: { 'content-type': 'application/json' }, body });
-        if (res.ok) lastServer.current = body;
-      } catch (e) { /* retried on next change */ }
-      pending.current = false;
+        ok = res.ok;
+        if (ok) {
+          lastServer.current = body;
+          const saved = await res.json().catch(() => null);
+          if (saved?.updatedAt) lastWriteAt.current = saved.updatedAt;
+        }
+      } catch (e) { /* retried below */ }
+      saving.current = false;
+      writeSeq.current++;
+      // Re-check: anything changed during the save gets saved next; a failed save is retried shortly.
+      if (ok) setSyncTick(t => t + 1);
+      else setTimeout(() => setSyncTick(t => t + 1), 5000);
     }, 400);
-    return () => { clearTimeout(timer); pending.current = false; };
   }, [wishlistItems, ownerName, trash, theme, syncTick]);
 
   // Handle admin view: require password
@@ -195,7 +226,13 @@ export default function App() {
 
   // Handlers
   const handleCompleteQuiz = (answers) => {
-    setQuizAnswers(answers);
+    // Ties between equally good gifts rotate each time the quiz is taken.
+    let rotation = 0;
+    try {
+      rotation = (Number(localStorage.getItem(ROTATION_STORAGE_KEY)) || 0) + 1;
+      localStorage.setItem(ROTATION_STORAGE_KEY, String(rotation));
+    } catch (e) { /* storage unavailable: no rotation */ }
+    setQuizAnswers({ ...answers, rotation });
     setCurrentView('result');
   };
 

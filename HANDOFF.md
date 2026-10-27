@@ -70,3 +70,7 @@ Added Jean Paul Gaultier Le Male EDT 2.5 oz $105 (B0743HLFH5; 4.2 oz $132 B001BA
 
 ## Whole-dollar prices (committed locally, NOT pushed)
 Owner wants prices rounded to whole dollars: Lattafa 27, Cremo 21, Armani 89 (was 26.95/21.26/89.25); formatPrice() rounds; Admin saves Math.round(price). DATA_VERSION 11, key v22.
+
+## Theme flip-back bug + rotating ties (committed locally, NOT pushed)
+Bug: switching theme sometimes reverted after a few seconds. Causes fixed: (1) client race in src/App.jsx: the push effect's cleanup reset `pending` while a PUT was in flight, so a poll could apply the old server copy and then save it back. Sync now uses refs (saveTimer, saving, writeSeq, lastWriteAt, `latest`) and ignores any server read that raced a local change/save or is older than our last save, and never overwrites unsaved local changes. (2) netlify/functions/state.mjs now reads/writes with consistency:"strong" (Blobs default is eventually consistent) and keeps stored theme/trash/knownIds when an out-of-date page PUTs without them (previously theme reset to christmas). Simulated in /tmp (not committed) against a laggy/stale fake server.
+Ties: when several gifts score exactly the same (e.g. $18 Curl Mousse / Curl Cream / Deodorant) the quiz rotates through them each time it is taken (rotation counter in localStorage `festive_gift_quiz_rotation_v1`, passed in quizAnswers.rotation; recommend.js pickTied). Owner declined an extra hair-goal question.

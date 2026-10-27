@@ -9,7 +9,8 @@ const json = (body, status = 200) =>
   });
 
 export default async (req) => {
-  const store = getStore("wishlist");
+  // Strong consistency: a read right after a save must not return the previous copy.
+  const store = getStore({ name: "wishlist", consistency: "strong" });
 
   if (req.method === "GET") {
     const state = await store.get(KEY, { type: "json" });
@@ -28,7 +29,17 @@ export default async (req) => {
     if (!Array.isArray(body.items) || typeof body.ownerName !== "string") {
       return json({ error: "bad shape" }, 400);
     }
-    const state = { items: body.items, ownerName: body.ownerName, version: body.version ?? 0, knownIds: Array.isArray(body.knownIds) ? body.knownIds : [], theme: ['christmas', 'birthday'].includes(body.theme) ? body.theme : 'christmas', trash: Array.isArray(body.trash) ? body.trash.slice(0, 100) : [], updatedAt: Date.now() };
+    // An out-of-date page may omit newer fields; keep what is already stored instead of resetting it.
+    const existing = (await store.get(KEY, { type: "json" })) ?? {};
+    const state = {
+      items: body.items,
+      ownerName: body.ownerName,
+      version: body.version ?? 0,
+      knownIds: Array.isArray(body.knownIds) ? body.knownIds : existing.knownIds ?? [],
+      theme: ["christmas", "birthday"].includes(body.theme) ? body.theme : existing.theme ?? "christmas",
+      trash: Array.isArray(body.trash) ? body.trash.slice(0, 100) : existing.trash ?? [],
+      updatedAt: Date.now(),
+    };
     await store.setJSON(KEY, state);
     return json(state);
   }

@@ -50,7 +50,11 @@ const MIN_BUNDLE_SHARE = 0.7;
 const TIERS = { casual: ['casual'], friend: ['casual', 'friend'], close: ['casual', 'friend', 'close'] };
 const TIER_STEPS = { casual: ['casual', 'friend', 'close'], friend: ['friend', 'close'], close: ['close'] };
 
-export function getRecommendation(items, { relationship, budget, interests = [], style = 'any', strategy }) {
+const EPS = 1e-9;
+// Equally good picks take turns: `rotation` goes up each time the quiz is taken.
+const pickTied = (ties, rotation) => ties[Math.abs(rotation) % ties.length];
+
+export function getRecommendation(items, { relationship, budget, interests = [], style = 'any', strategy, rotation = 0 }) {
   const cap = budget; // never recommend more than the budget
   const wantsGiftCard = interests.includes('giftcard');
 
@@ -72,17 +76,25 @@ export function getRecommendation(items, { relationship, budget, interests = [],
       }
       if (!candidates.length) candidates = [[...pool].sort((a, b) => a.price - b.price)[0]];
       const value = (i) => itemScore(i) + fit(i.price, budget) * 3;
-      const best = [...candidates].sort((a, b) => value(b) - value(a))[0];
+      const sorted = [...candidates].sort((a, b) => value(b) - value(a));
+      const ties = sorted.filter(i => value(sorted[0]) - value(i) < EPS);
+      const best = pickTied(ties, rotation);
       return { type: 'solo', items: [best], score: value(best) };
     };
 
     const bundle = () => {
       let best = null;
+      let ties = [];
       const consider = (group) => {
         const total = sum(group);
         if (total > cap || total < budget * MIN_BUNDLE_SHARE) return;
         const score = group.reduce((s, i) => s + itemScore(i), 0) / group.length + fit(total, budget) * 3;
-        if (!best || score > best.score) best = { type: 'bundle', items: group, score };
+        if (!best || score > best.score + EPS) {
+          best = { type: 'bundle', items: group, score };
+          ties = [best];
+        } else if (Math.abs(score - best.score) < EPS && ties.length < 200) {
+          ties.push({ type: 'bundle', items: group, score });
+        }
       };
       for (let i = 0; i < affordable.length; i++) {
         for (let j = i + 1; j < affordable.length; j++) {
@@ -90,7 +102,7 @@ export function getRecommendation(items, { relationship, budget, interests = [],
           for (let k = j + 1; k < affordable.length; k++) consider([affordable[i], affordable[j], affordable[k]]);
         }
       }
-      return best;
+      return best && pickTied(ties, rotation);
     };
 
     // "Fill It Up": as many gifts (up to MAX_FILL_ITEMS) as it takes to use the whole budget.
@@ -119,13 +131,21 @@ export function getRecommendation(items, { relationship, budget, interests = [],
       if (!maxT) return null;
       const slack = Math.max(500, Math.round(target * 0.03));
       let best = null;
+      let ties = [];
       for (let n = 1; n <= maxN; n++) {
         for (let t = maxT; t >= maxT - slack && t > 0; t--) {
           const cell = dp[n][t];
-          if (cell && (!best || cell.score > best.score || (cell.score === best.score && t > best.t))) best = { ...cell, t };
+          if (!cell) continue;
+          if (!best || cell.score > best.score + EPS || (Math.abs(cell.score - best.score) < EPS && t > best.t)) {
+            best = { ...cell, t };
+            ties = [best];
+          } else if (Math.abs(cell.score - best.score) < EPS && t === best.t) {
+            ties.push({ ...cell, t });
+          }
         }
       }
-      return best && { type: 'bundle', filled: true, items: best.idx.map(k => fillable[k]), score: best.score };
+      const pick = best && pickTied(ties, rotation);
+      return pick && { type: 'bundle', filled: true, items: pick.idx.map(k => fillable[k]), score: pick.score };
     };
 
     let result;
