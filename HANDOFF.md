@@ -67,3 +67,6 @@ New packaging option "Fill It Up" (strategy 'fill'): knapsack over cents in src/
 
 ## Le Male (pushed with Fill It Up)
 Added Jean Paul Gaultier Le Male EDT 2.5 oz $105 (B0743HLFH5; 4.2 oz $132 B001BAG38G, 6.8 oz $172 B000XE0N2I), tier 'friend'. DATA_VERSION 10, key v21.
+
+## Whole-dollar prices (committed locally, NOT pushed)
+Owner wants prices rounded to whole dollars: Lattafa 27, Cremo 21, Armani 89 (was 26.95/21.26/89.25); formatPrice() rounds; Admin saves Math.round(price). DATA_VERSION 11, key v22.

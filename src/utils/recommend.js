@@ -37,10 +37,8 @@ const styleScore = (item, style) => (style && style !== 'any' && tagsOf(item).in
 // 1 when the total hits the budget, falling off as it moves away from it.
 const fit = (total, budget) => Math.max(0, 1 - Math.abs(budget - total) / budget);
 
-export const formatPrice = (n) => {
-  const r = Math.round(n * 100) / 100;
-  return Number.isInteger(r) ? String(r) : r.toFixed(2);
-};
+// Prices are shown in whole dollars.
+export const formatPrice = (n) => String(Math.round(n));
 
 const cents = (n) => Math.round(n * 100) / 100;
 const sum = (items) => cents(items.reduce((s, i) => s + i.price, 0));

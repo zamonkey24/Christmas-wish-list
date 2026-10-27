@@ -76,7 +76,7 @@ export default function AdminWishlist({
     const itemData = {
       id: editingItemId || `g_${Date.now()}`,
       title: title.trim(),
-      price: Number(price),
+      price: Math.round(Number(price)),
       category,
       priority,
       closenessRequired,
