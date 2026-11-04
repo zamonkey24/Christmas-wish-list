@@ -3,8 +3,9 @@ import { Search, Filter, ExternalLink, Gift, CheckCircle2, Sparkles, Lock, KeyRo
 import confetti from 'canvas-confetti';
 import ProductLink from './ProductLink';
 import { useTheme } from '../ThemeContext';
+import ClaimActions from './ClaimActions';
 
-export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimItem, ownerName, adminPassword }) {
+export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimItem, ownerName, canUnclaim }) {
   const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -20,9 +21,6 @@ export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimI
   // Claim Details / Unclaim Modal states
   const [showClaimDetailsModal, setShowClaimDetailsModal] = useState(false);
   const [claimDetailsItem, setClaimDetailsItem] = useState(null);
-  const [unclaimPasswordInput, setUnclaimPasswordInput] = useState('');
-  const [unclaimPasswordError, setUnclaimPasswordError] = useState(false);
-  const [showUnclaimConfirm, setShowUnclaimConfirm] = useState(false);
 
   const categories = ['All', 'Family', 'Tech & Gadgets', 'Cozy & Home', 'Fun & Games', 'Experiences & Activities', 'Creative & Books', 'Everyday Essentials'];
 
@@ -65,22 +63,8 @@ export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimI
   const handleOpenClaimDetails = (item) => {
     setClaimDetailsItem(item);
     setShowClaimDetailsModal(true);
-    setUnclaimPasswordInput('');
-    setUnclaimPasswordError(false);
-    setShowUnclaimConfirm(false);
   };
 
-  const handleUnclaimWithPassword = () => {
-    if (unclaimPasswordInput === adminPassword) {
-      onUnclaimItem(claimDetailsItem.id);
-      setShowClaimDetailsModal(false);
-      setUnclaimPasswordInput('');
-      setUnclaimPasswordError(false);
-      setShowUnclaimConfirm(false);
-    } else {
-      setUnclaimPasswordError(true);
-    }
-  };
 
   return (
     <div style={{ maxWidth: '1140px', margin: '30px auto', padding: '0 20px' }}>
@@ -388,92 +372,12 @@ export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimI
               )}
             </div>
 
-            {/* Unclaim Section */}
-            {!showUnclaimConfirm ? (
-              <div style={{ textAlign: 'center' }}>
-                <button 
-                  onClick={() => setShowUnclaimConfirm(true)}
-                  style={{ 
-                    background: 'rgba(225, 29, 72, 0.12)', 
-                    border: '1px solid rgba(225, 29, 72, 0.3)', 
-                    borderRadius: '10px', 
-                    padding: '10px 20px', 
-                    color: '#fb7185', 
-                    fontWeight: 600, 
-                    fontSize: '0.85rem', 
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <Undo2 style={{ width: '14px', height: '14px' }} />
-                  Unclaim This Item
-                </button>
-                <p style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '8px' }}>
-                  🔒 Requires owner password to unclaim
-                </p>
-              </div>
-            ) : (
-              <div style={{ background: 'rgba(225, 29, 72, 0.08)', border: '1px solid rgba(225, 29, 72, 0.25)', borderRadius: '12px', padding: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <Lock style={{ width: '16px', height: '16px', color: '#fb7185' }} />
-                  <span style={{ color: '#fb7185', fontWeight: 700, fontSize: '0.9rem' }}>Enter Owner Password to Unclaim</span>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input 
-                    type="password"
-                    placeholder="Password..."
-                    value={unclaimPasswordInput}
-                    onChange={(e) => { setUnclaimPasswordInput(e.target.value); setUnclaimPasswordError(false); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleUnclaimWithPassword(); }}
-                    style={{ 
-                      flex: 1, 
-                      padding: '10px 14px', 
-                      borderRadius: '10px', 
-                      background: 'rgba(255, 255, 255, 0.05)', 
-                      border: unclaimPasswordError ? '2px solid #e11d48' : '1px solid rgba(255, 255, 255, 0.15)', 
-                      color: '#fff', 
-                      fontSize: '0.9rem', 
-                      outline: 'none',
-                      textAlign: 'center',
-                      letterSpacing: '0.15em'
-                    }}
-                  />
-                  <button 
-                    onClick={handleUnclaimWithPassword}
-                    style={{ 
-                      padding: '10px 16px', 
-                      borderRadius: '10px', 
-                      background: '#e11d48', 
-                      border: 'none', 
-                      color: '#fff', 
-                      fontWeight: 700, 
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontSize: '0.85rem'
-                    }}
-                  >
-                    <Undo2 style={{ width: '14px', height: '14px' }} />
-                    Unclaim
-                  </button>
-                </div>
-                {unclaimPasswordError && (
-                  <p style={{ color: '#e11d48', fontSize: '0.8rem', fontWeight: 600, marginTop: '8px' }}>
-                    ❌ Wrong password!
-                  </p>
-                )}
-                <button 
-                  onClick={() => { setShowUnclaimConfirm(false); setUnclaimPasswordInput(''); setUnclaimPasswordError(false); }}
-                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.8rem', marginTop: '8px' }}
-                >
-                  ← Cancel
-                </button>
-              </div>
-            )}
+            {/* Unclaim: the wishlist owner, or whoever claimed it while signed in */}
+            <ClaimActions
+              canUnclaim={canUnclaim(claimDetailsItem)}
+              onUnclaim={() => onUnclaimItem(claimDetailsItem.id)}
+              onDone={() => setShowClaimDetailsModal(false)}
+            />
 
             {/* Close Modal Button */}
             <div style={{ textAlign: 'center', marginTop: '16px' }}>

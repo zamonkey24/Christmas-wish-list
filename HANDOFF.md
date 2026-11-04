@@ -1,3 +1,27 @@
+# GiftBloom (festive-gift-quiz): read this first
+
+> NOTE: everything below the "Older notes" line describes the pre-accounts, single-wishlist app (shared /api/state, DATA_VERSION, knownIds, admin password). That design is REPLACED by the architecture here.
+
+## Current architecture (accounts + invite links) - committed locally, NOT pushed
+Live site: https://giftbloom.netlify.app (Netlify, auto-deploys from GitHub zamonkey24/Christmas-wish-list `main`).
+
+**Deploy problem found:** the live site was stuck on commit 0b005ec; commits 81b262a and 1ee05b6 built fine from a clean clone (verified) but Netlify never deployed them. Most likely Netlify's monthly build/deploy credits ran out (every push = a production deploy) or auto-deploy is paused. Ask the owner to check Netlify > Deploys. BATCH changes: push rarely.
+
+**Backend** (Netlify Function `netlify/functions/api.mjs`, path /api/*, logic in `netlify/lib/api.mjs`, link reader in `netlify/lib/preview.mjs`; storage = Netlify Blobs store "giftbloom", strong consistency):
+- Accounts: email/username + password (scrypt hashed), HttpOnly cookie session `gb_session` (400 days), login lockout after 8 fails/15 min, JSON-only writes (CSRF). No password reset / email (owner told).
+- Each account owns exactly one wishlist (`lists/<id>`: items, trash, theme, ownerName, inviteCode). Invite code => `invites/<code>`. People who open an invite link join (saved in `users/<id>.joined`) and can then open it without the code. Visitors with a code but no account can view + claim. Only the owner can PUT (server strips claim fields and junk).
+- Claims live in their own blob `claims/<listId>` (optimistic concurrency with onlyIfNew/onlyIfMatch) so owner edits never wipe claims and two simultaneous claims can't both win. Unclaim: owner, or the signed-in person who claimed.
+- `POST /api/preview {url}` (signed-in only): reads a product page (SSRF-guarded: no private IPs/odd ports, redirects re-checked) and returns title/photo/price (Amazon `hiRes`/price selectors, Open Graph, JSON-LD). Amazon may block Netlify's servers sometimes: the UI then lets the user type name + price.
+- `GET /api/health` proves storage works (visit it after deploy). `GET /api/legacy` + `POST /api/import-legacy {setupCode:"01015"}`: one-time move of the ORIGINAL wishlist (old blob store "wishlist", key "wishlist-state", 20 items at version 11, with claims) into the importing account. SECURITY NOTE: "01015" is the old public admin password, so whoever signs up first and knows it could take the original list. The owner must sign up and import right after the deploy; after import the flag `legacy/imported` blocks everyone.
+- Old `/api/state` function was deleted.
+
+**Frontend**: `src/App.jsx` = shell (auth, tabs "My Wishlist" / "Shared with me", invite handling via `?invite=CODE`, pending invite saved in localStorage until sign-in, theme + snowfall). `src/ListView.jsx` = one wishlist (loads/polls every 15s; owner edits auto-save with the race-proof logic from before; claims go straight to the API). New components: AuthScreen, AccountBar, SharedWithMe, AddGiftByLink (paste a link -> name/photo/price, auto tags via utils/inferGift), InvitePanel (copy/share/rotate link, in the editor), ClaimActions, LegacyImport. `src/utils/migrate.js` adds starter items (`addedIn`) to an imported old list. New accounts start with an EMPTY list. The old admin password lock was removed (ownership = account).
+
+**Tests** (all passing): `node tools/test/api.test.mjs` (39 server tests incl. permissions, invites, claim races, link parsing on real Amazon pages saved in /tmp), `node tools/test/utils.test.mjs`, and a real-browser end-to-end `tools/test/e2e-browser.mjs` against `tools/test/e2e-server.mjs` (needs puppeteer-core; run flow: build, start e2e-server, run). Cannot test against real Netlify Blobs locally: after deploy check /api/health shows {"ok":true,"storage":true}.
+
+**Rules for future changes**: starter items in src/data/initialWishlist.js only matter for importing the original list (`addedIn`). Keep owner-only writes server-side. Batch pushes (Netlify credits).
+
+---- Older notes (pre-accounts, now obsolete) ----
 # Handoff: festive-gift-quiz (Christmas wishlist site, React+Vite, GitHub zamonkey24/Christmas-wish-list, Netlify auto-deploy)
 
 Data: src/data/initialWishlist.js. Images: public/products/*.jpg (real Amazon photos, resized 600px).

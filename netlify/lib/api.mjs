@@ -1,0 +1,481 @@
+// Accounts, wishlists, invite links and claims. Storage is injected so this runs on Netlify Blobs in
+// production and on an in-memory store in tests.
+import crypto from 'node:crypto';
+import { promisify } from 'node:util';
+import { fetchProduct } from './preview.mjs';
+
+const scrypt = promisify(crypto.scrypt);
+
+const COOKIE = 'gb_session';
+const SESSION_DAYS = 400;
+const THEMES = ['christmas', 'birthday'];
+const MAX_BODY = 1_000_000;
+const MAX_ITEMS = 300;
+const LEGACY_SETUP_CODE = '01015'; // the old owner password; lets the original wishlist be imported once
+const CLAIM_FIELDS = ['claimed', 'claimedBy', 'claimedNote', 'claimedByMe'];
+
+class HttpError extends Error {
+  constructor(status, message) { super(message); this.status = status; }
+}
+
+const json = (body, status = 200, headers = {}) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store', ...headers }
+  });
+
+const rand = (bytes) => crypto.randomBytes(bytes).toString('hex');
+const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
+const inviteCode = () => {
+  const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
+  return Array.from(crypto.randomBytes(10), b => alphabet[b % alphabet.length]).join('');
+};
+
+const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+const safeUrl = (v, allowRelative = false) => {
+  const s = str(v, 2000);
+  if (!s) return '';
+  if (allowRelative && s.startsWith('/') && !s.startsWith('//')) return s;
+  try {
+    const u = new URL(s);
+    return ['http:', 'https:'].includes(u.protocol) ? u.toString() : '';
+  } catch { return ''; }
+};
+
+function cleanItem(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const id = str(raw.id, 60);
+  const title = str(raw.title, 200);
+  const price = Math.round(Number(raw.price));
+  if (!id || !title || !Number.isFinite(price) || price < 0 || price > 100000) return null;
+  const item = {
+    id,
+    title,
+    price,
+    category: str(raw.category, 60) || 'Everyday Essentials',
+    closenessRequired: ['casual', 'friend', 'close'].includes(raw.closenessRequired) ? raw.closenessRequired : 'casual',
+    priority: str(raw.priority, 40) || 'High Wish ❤️',
+    imageUrl: safeUrl(raw.imageUrl, true),
+    url: safeUrl(raw.url),
+    description: str(raw.description, 600),
+    tags: Array.isArray(raw.tags) ? raw.tags.map(t => str(t, 30).toLowerCase()).filter(Boolean).slice(0, 12) : []
+  };
+  const mustGet = str(raw.mustGet, 120);
+  if (mustGet) item.mustGet = mustGet;
+  if (Number.isFinite(raw.addedIn)) item.addedIn = raw.addedIn;
+  if (Number.isFinite(raw.deletedAt)) item.deletedAt = raw.deletedAt;
+  return item;
+}
+
+function cleanItems(arr, limit) {
+  if (!Array.isArray(arr) || arr.length > limit) throw new HttpError(400, 'Too many items.');
+  const seen = new Set();
+  const out = [];
+  for (const raw of arr) {
+    const it = cleanItem(raw);
+    if (!it) throw new HttpError(400, 'One of the gifts is missing a name or price.');
+    if (seen.has(it.id)) continue;
+    seen.add(it.id);
+    out.push(it);
+  }
+  return out;
+}
+
+export function createApi({ store, legacyStore = null, fetchProductImpl = fetchProduct, now = () => Date.now() }) {
+  const getJSON = (key) => store.get(key, { type: 'json' });
+
+  // ---------- passwords & sessions
+  async function hashPassword(password, saltHex) {
+    const buf = await scrypt(password, Buffer.from(saltHex, 'hex'), 64, { N: 16384, r: 8, p: 1 });
+    return buf.toString('hex');
+  }
+
+  const cookieHeader = (req, token, maxAge) => {
+    const secure = new URL(req.url).protocol === 'https:' ? '; Secure' : '';
+    return `${COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${secure}`;
+  };
+
+  const readCookie = (req) => {
+    const raw = req.headers.get('cookie') || '';
+    for (const part of raw.split(';')) {
+      const [k, ...v] = part.trim().split('=');
+      if (k === COOKIE) return v.join('=');
+    }
+    return null;
+  };
+
+  async function getSession(req) {
+    const token = readCookie(req);
+    if (!token || token.length < 20) return null;
+    const s = await getJSON(`sessions/${sha256(token)}`);
+    if (!s || now() - s.createdAt > SESSION_DAYS * 86400000) return null;
+    const user = await getJSON(`users/${s.userId}`);
+    return user ? { user, tokenHash: sha256(token) } : null;
+  }
+
+  const requireUser = async (req) => {
+    const s = await getSession(req);
+    if (!s) throw new HttpError(401, 'Please sign in.');
+    return s.user;
+  };
+
+  async function startSession(req, user) {
+    const token = rand(32);
+    await store.setJSON(`sessions/${sha256(token)}`, { userId: user.id, createdAt: now() });
+    return cookieHeader(req, token, SESSION_DAYS * 86400);
+  }
+
+  const publicUser = (u) => ({ id: u.id, name: u.name, login: u.login });
+
+  // Failed-attempt limiter (per key) so passwords cannot be guessed endlessly.
+  async function checkRate(key) {
+    const r = await getJSON(`rate/${key}`);
+    if (r && r.fails >= 8 && now() - r.first < 15 * 60000) throw new HttpError(429, 'Too many tries. Please wait a few minutes.');
+  }
+  async function noteFail(key) {
+    const r = await getJSON(`rate/${key}`);
+    const fresh = !r || now() - r.first >= 15 * 60000;
+    await store.setJSON(`rate/${key}`, { fails: fresh ? 1 : r.fails + 1, first: fresh ? now() : r.first });
+  }
+  const clearRate = (key) => store.delete(`rate/${key}`);
+
+  // ---------- lists
+  async function newList(user) {
+    const id = `l_${rand(6)}`;
+    const code = inviteCode();
+    const list = {
+      id, ownerId: user.id, ownerName: user.name, items: [], trash: [], theme: 'christmas',
+      inviteCode: code, legacyVersion: null, createdAt: now(), updatedAt: now()
+    };
+    await store.setJSON(`lists/${id}`, list);
+    await store.setJSON(`invites/${code}`, { listId: id });
+    return list;
+  }
+
+  async function claimsOf(listId) {
+    return (await getJSON(`claims/${listId}`)) || {};
+  }
+
+  async function updateClaims(listId, mutate) {
+    const key = `claims/${listId}`;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const cur = await store.getWithMetadata(key, { type: 'json' });
+      const map = cur?.data ? { ...cur.data } : {};
+      const out = mutate(map);
+      const res = cur
+        ? await store.setJSON(key, map, { onlyIfMatch: cur.etag })
+        : await store.setJSON(key, map, { onlyIfNew: true });
+      if (res?.modified !== false) return out;
+    }
+    throw new HttpError(409, 'Busy, please try again.');
+  }
+
+  const stripClaims = (item) => {
+    const copy = { ...item };
+    for (const f of CLAIM_FIELDS) delete copy[f];
+    return copy;
+  };
+
+  function viewOf(list, claims, { isOwner, userId }) {
+    const items = list.items.map(it => {
+      const c = claims[it.id];
+      return c
+        ? { ...it, claimed: true, claimedBy: c.claimedBy, claimedNote: c.note || '', claimedByMe: Boolean(userId && c.userId === userId) }
+        : { ...it, claimed: false, claimedBy: '', claimedNote: '', claimedByMe: false };
+    });
+    const view = {
+      id: list.id,
+      ownerName: list.ownerName,
+      theme: list.theme,
+      items,
+      isOwner,
+      updatedAt: list.updatedAt
+    };
+    if (isOwner) {
+      view.trash = list.trash || [];
+      view.inviteCode = list.inviteCode;
+      view.legacyVersion = list.legacyVersion ?? null;
+    }
+    return view;
+  }
+
+  // Owner, someone who joined with the invite link before, or a visitor holding the current invite code.
+  async function accessList(req, listId, { ownerOnly = false } = {}) {
+    const list = await getJSON(`lists/${listId}`);
+    if (!list) throw new HttpError(404, 'That wishlist was not found.');
+    const session = await getSession(req);
+    const user = session?.user || null;
+    const isOwner = Boolean(user && user.id === list.ownerId);
+    if (isOwner) return { list, user, isOwner };
+    if (ownerOnly) throw new HttpError(403, 'Only the owner can do that.');
+    const code = req.headers.get('x-invite-code');
+    const member = Boolean(user && (user.joined || []).some(j => j.listId === listId));
+    if (!member && code !== list.inviteCode) throw new HttpError(403, 'You need an invite link for this wishlist.');
+    return { list, user, isOwner: false };
+  }
+
+  const readBody = async (req) => {
+    const type = req.headers.get('content-type') || '';
+    if (!type.includes('application/json')) throw new HttpError(415, 'Expected JSON.');
+    const text = await req.text();
+    if (text.length > MAX_BODY) throw new HttpError(413, 'That is too large.');
+    try { return JSON.parse(text || '{}'); } catch { throw new HttpError(400, 'Bad request.'); }
+  };
+
+  // ---------- route handlers
+  async function signup(req) {
+    const b = await readBody(req);
+    const name = str(b.name, 40);
+    const login = str(b.login, 80).toLowerCase();
+    const password = typeof b.password === 'string' ? b.password : '';
+    if (!name) throw new HttpError(400, 'Please enter your name.');
+    if (!/^[a-z0-9._+@-]{3,80}$/.test(login)) throw new HttpError(400, 'Use an email or username with 3+ letters or numbers.');
+    if (password.length < 6 || password.length > 200) throw new HttpError(400, 'Your password needs at least 6 characters.');
+
+    const id = `u_${rand(6)}`;
+    const claimed = await store.setJSON(`logins/${login}`, { userId: id }, { onlyIfNew: true });
+    if (claimed?.modified === false) throw new HttpError(409, 'That email or username is already taken. Try signing in.');
+
+    const salt = rand(16);
+    const user = { id, login, name, salt, hash: await hashPassword(password, salt), joined: [], myListId: null, createdAt: now() };
+    const list = await newList(user);
+    user.myListId = list.id;
+    await store.setJSON(`users/${id}`, user);
+    const setCookie = await startSession(req, user);
+    return json({ user: publicUser(user), myListId: list.id, joined: [] }, 200, { 'set-cookie': setCookie });
+  }
+
+  async function login(req) {
+    const b = await readBody(req);
+    const loginName = str(b.login, 80).toLowerCase();
+    const password = typeof b.password === 'string' ? b.password : '';
+    await checkRate(`login/${loginName}`);
+    const idx = loginName ? await getJSON(`logins/${loginName}`) : null;
+    const user = idx ? await getJSON(`users/${idx.userId}`) : null;
+    const given = user ? await hashPassword(password, user.salt) : null;
+    const ok = Boolean(user && given && crypto.timingSafeEqual(Buffer.from(given, 'hex'), Buffer.from(user.hash, 'hex')));
+    if (!ok) {
+      await noteFail(`login/${loginName}`);
+      throw new HttpError(401, 'Wrong email/username or password.');
+    }
+    await clearRate(`login/${loginName}`);
+    const setCookie = await startSession(req, user);
+    return json(await meBody(user), 200, { 'set-cookie': setCookie });
+  }
+
+  async function logout(req) {
+    const s = await getSession(req);
+    if (s) await store.delete(`sessions/${s.tokenHash}`);
+    return json({ ok: true }, 200, { 'set-cookie': cookieHeader(req, '', 0) });
+  }
+
+  async function meBody(user) {
+    const joined = [];
+    for (const j of user.joined || []) {
+      const l = await getJSON(`lists/${j.listId}`);
+      if (l) joined.push({ listId: j.listId, ownerName: l.ownerName, theme: l.theme, addedAt: j.addedAt });
+    }
+    const mine = user.myListId ? await getJSON(`lists/${user.myListId}`) : null;
+    return { user: publicUser(user), myListId: user.myListId, myTheme: mine?.theme || 'christmas', joined };
+  }
+
+  async function me(req) {
+    const s = await getSession(req);
+    if (!s) return json({ user: null });
+    return json(await meBody(s.user));
+  }
+
+  async function inviteInfo(code) {
+    const inv = await getJSON(`invites/${code}`);
+    const list = inv ? await getJSON(`lists/${inv.listId}`) : null;
+    if (!list || list.inviteCode !== code) throw new HttpError(404, 'That invite link is not valid anymore.');
+    return json({ listId: list.id, ownerName: list.ownerName, theme: list.theme });
+  }
+
+  async function join(req) {
+    const user = await requireUser(req);
+    const b = await readBody(req);
+    const code = str(b.code, 40);
+    const inv = await getJSON(`invites/${code}`);
+    const list = inv ? await getJSON(`lists/${inv.listId}`) : null;
+    if (!list || list.inviteCode !== code) throw new HttpError(404, 'That invite link is not valid anymore.');
+    if (list.ownerId === user.id) return json({ listId: list.id, own: true });
+    if (!(user.joined || []).some(j => j.listId === list.id)) {
+      const fresh = await getJSON(`users/${user.id}`);
+      fresh.joined = [...(fresh.joined || []), { listId: list.id, addedAt: now() }];
+      await store.setJSON(`users/${user.id}`, fresh);
+    }
+    return json({ listId: list.id, ownerName: list.ownerName });
+  }
+
+  async function leave(req) {
+    const user = await requireUser(req);
+    const b = await readBody(req);
+    const fresh = await getJSON(`users/${user.id}`);
+    fresh.joined = (fresh.joined || []).filter(j => j.listId !== b.listId);
+    await store.setJSON(`users/${user.id}`, fresh);
+    return json({ ok: true });
+  }
+
+  async function getList(req, listId) {
+    const { list, user, isOwner } = await accessList(req, listId);
+    return json(viewOf(list, await claimsOf(listId), { isOwner, userId: user?.id }));
+  }
+
+  async function putList(req, listId) {
+    const { list } = await accessList(req, listId, { ownerOnly: true });
+    const b = await readBody(req);
+    const items = cleanItems((b.items || []).map(stripClaims), MAX_ITEMS);
+    const trash = cleanItems(b.trash || [], 100);
+    const next = {
+      ...list,
+      items,
+      trash,
+      ownerName: str(b.ownerName, 40) || list.ownerName,
+      theme: THEMES.includes(b.theme) ? b.theme : list.theme,
+      legacyVersion: b.legacyVersion === null ? null : list.legacyVersion ?? null,
+      updatedAt: Math.max(now(), (list.updatedAt || 0) + 1)
+    };
+    await store.setJSON(`lists/${listId}`, next);
+    return json({ ok: true, updatedAt: next.updatedAt });
+  }
+
+  async function claim(req, listId) {
+    const { list, user } = await accessList(req, listId);
+    const b = await readBody(req);
+    const itemId = str(b.itemId, 60);
+    if (!list.items.some(i => i.id === itemId)) throw new HttpError(404, 'That gift is no longer on the list.');
+    const claimedBy = str(b.name, 40) || user?.name || '';
+    if (!claimedBy) throw new HttpError(400, 'Please enter your name.');
+    await updateClaims(listId, (map) => {
+      if (map[itemId]) throw new HttpError(409, 'Someone just claimed that gift.');
+      map[itemId] = { claimedBy, note: str(b.note, 300), userId: user?.id || null, at: now() };
+    });
+    return json(viewOf(list, await claimsOf(listId), { isOwner: user?.id === list.ownerId, userId: user?.id }));
+  }
+
+  async function unclaim(req, listId) {
+    const { list, user, isOwner } = await accessList(req, listId);
+    const b = await readBody(req);
+    const itemId = str(b.itemId, 60);
+    await updateClaims(listId, (map) => {
+      const c = map[itemId];
+      if (!c) return;
+      if (!isOwner && !(user && c.userId === user.id)) throw new HttpError(403, 'Only the list owner or the person who claimed it can unclaim.');
+      delete map[itemId];
+    });
+    return json(viewOf(list, await claimsOf(listId), { isOwner, userId: user?.id }));
+  }
+
+  async function resetClaims(req, listId) {
+    const { list, user } = await accessList(req, listId, { ownerOnly: true });
+    await updateClaims(listId, (map) => { for (const k of Object.keys(map)) delete map[k]; });
+    return json(viewOf(list, {}, { isOwner: true, userId: user.id }));
+  }
+
+  async function rotateInvite(req, listId) {
+    const { list } = await accessList(req, listId, { ownerOnly: true });
+    const code = inviteCode();
+    await store.setJSON(`invites/${code}`, { listId });
+    await store.delete(`invites/${list.inviteCode}`);
+    await store.setJSON(`lists/${listId}`, { ...list, inviteCode: code });
+    return json({ inviteCode: code });
+  }
+
+  async function preview(req) {
+    await requireUser(req);
+    const b = await readBody(req);
+    const url = str(b.url, 2000);
+    if (!url) throw new HttpError(400, 'Paste a product link first.');
+    try {
+      return json(await fetchProductImpl(url));
+    } catch (e) {
+      throw new HttpError(422, e.message || 'Could not read that link.');
+    }
+  }
+
+  async function legacyAvailable(req) {
+    await requireUser(req);
+    if (!legacyStore || (await getJSON('legacy/imported'))) return json({ available: false });
+    const old = await legacyStore.get('wishlist-state', { type: 'json' });
+    return json({ available: Boolean(old && Array.isArray(old.items) && old.items.length) });
+  }
+
+  async function importLegacy(req) {
+    const user = await requireUser(req);
+    const b = await readBody(req);
+    await checkRate(`legacy/${user.id}`);
+    if (b.setupCode !== LEGACY_SETUP_CODE) {
+      await noteFail(`legacy/${user.id}`);
+      throw new HttpError(403, 'That setup code is not right.');
+    }
+    if (!legacyStore) throw new HttpError(404, 'There is no original wishlist to import.');
+    if (await getJSON('legacy/imported')) throw new HttpError(409, 'The original wishlist was already imported.');
+    const old = await legacyStore.get('wishlist-state', { type: 'json' });
+    if (!old || !Array.isArray(old.items)) throw new HttpError(404, 'There is no original wishlist to import.');
+
+    const claims = {};
+    for (const it of old.items) {
+      if (it.claimed) claims[it.id] = { claimedBy: str(it.claimedBy, 40) || 'Someone', note: str(it.claimedNote, 300), userId: null, at: now() };
+    }
+    const list = await getJSON(`lists/${user.myListId}`);
+    const next = {
+      ...list,
+      items: cleanItems(old.items.map(stripClaims), MAX_ITEMS),
+      trash: cleanItems(Array.isArray(old.trash) ? old.trash : [], 100),
+      theme: THEMES.includes(old.theme) ? old.theme : 'christmas',
+      ownerName: str(old.ownerName, 40) || list.ownerName,
+      legacyVersion: Number.isFinite(old.version) ? old.version : 0,
+      updatedAt: now()
+    };
+    await store.setJSON(`lists/${list.id}`, next);
+    await store.setJSON(`claims/${list.id}`, claims);
+    await store.setJSON('legacy/imported', { userId: user.id, at: now() });
+    await clearRate(`legacy/${user.id}`);
+    return json(viewOf(next, claims, { isOwner: true, userId: user.id }));
+  }
+
+  // ---------- router
+  async function handle(req) {
+    try {
+      const url = new URL(req.url);
+      const path = url.pathname.replace(/^\/api\/?/, '').replace(/\/$/, '');
+      const seg = path.split('/');
+      const m = req.method;
+
+      if (path === 'health' && m === 'GET') {
+        // Proves the storage behind accounts is reachable (visit /api/health after a deploy).
+        const stamp = now();
+        await store.setJSON('health/ping', { stamp });
+        const back = await getJSON('health/ping');
+        return json({ ok: true, storage: back?.stamp === stamp });
+      }
+      if (path === 'auth/signup' && m === 'POST') return await signup(req);
+      if (path === 'auth/login' && m === 'POST') return await login(req);
+      if (path === 'auth/logout' && m === 'POST') return await logout(req);
+      if (path === 'me' && m === 'GET') return await me(req);
+      if (seg[0] === 'invite' && seg.length === 2 && m === 'GET') return await inviteInfo(seg[1]);
+      if (path === 'join' && m === 'POST') return await join(req);
+      if (path === 'leave' && m === 'POST') return await leave(req);
+      if (path === 'preview' && m === 'POST') return await preview(req);
+      if (path === 'legacy' && m === 'GET') return await legacyAvailable(req);
+      if (path === 'import-legacy' && m === 'POST') return await importLegacy(req);
+      if (seg[0] === 'lists' && seg.length >= 2) {
+        const id = seg[1];
+        if (seg.length === 2 && m === 'GET') return await getList(req, id);
+        if (seg.length === 2 && m === 'PUT') return await putList(req, id);
+        if (seg[2] === 'claim' && m === 'POST') return await claim(req, id);
+        if (seg[2] === 'unclaim' && m === 'POST') return await unclaim(req, id);
+        if (seg[2] === 'reset-claims' && m === 'POST') return await resetClaims(req, id);
+        if (seg[2] === 'invite' && seg[3] === 'rotate' && m === 'POST') return await rotateInvite(req, id);
+      }
+      throw new HttpError(404, 'Not found.');
+    } catch (e) {
+      if (e instanceof HttpError) return json({ error: e.message }, e.status);
+      console.error('api error', e);
+      return json({ error: 'Something went wrong. Please try again.' }, 500);
+    }
+  }
+
+  return { handle };
+}

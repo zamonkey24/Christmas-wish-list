@@ -2,12 +2,12 @@ import React from 'react';
 import { Sparkles, Settings, List, HeartHandshake } from 'lucide-react';
 import { useTheme } from '../ThemeContext';
 
-export default function Header({ currentView, setCurrentView, wishlistItems, ownerName }) {
+export default function Header({ currentView, setCurrentView, wishlistItems, ownerName, isOwner }) {
   const theme = useTheme();
   const claimedCount = wishlistItems.filter(i => i.claimed).length;
 
   return (
-    <header style={{ position: 'sticky', top: 0, zIndex: 50, padding: '16px 24px', backdropFilter: 'blur(12px)', background: 'var(--header-bg)', borderBottom: '1px solid var(--header-border)' }}>
+    <header style={{ position: 'sticky', top: 'var(--accountbar-h, 0px)', zIndex: 50, padding: '16px 24px', backdropFilter: 'blur(12px)', background: 'var(--header-bg)', borderBottom: '1px solid var(--header-border)' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         
         {/* Brand */}
@@ -49,7 +49,7 @@ export default function Header({ currentView, setCurrentView, wishlistItems, own
         </div>
 
         {/* Navigation Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           
           <button
             onClick={() => setCurrentView('quiz')}
@@ -69,6 +69,7 @@ export default function Header({ currentView, setCurrentView, wishlistItems, own
             All Gifts ({wishlistItems.length})
           </button>
 
+          {isOwner && (
           <button
             onClick={() => setCurrentView('admin')}
             className={currentView === 'admin' ? 'festive-btn-primary' : 'festive-btn-secondary'}
@@ -77,6 +78,7 @@ export default function Header({ currentView, setCurrentView, wishlistItems, own
             <Settings style={{ width: '16px', height: '16px' }} />
             Edit Wishlist
           </button>
+          )}
 
           {/* Claimed Stat Badge */}
           <div className="glass-pill" style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#e2e8f0' }}>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useTheme, THEMES } from '../ThemeContext';
+import AddGiftByLink from './AddGiftByLink';
+import InvitePanel from './InvitePanel';
 import { Plus, Trash2, Edit2, Download, Upload, RefreshCw, CheckCircle2, User, Gift, Save, Search, Undo2, ExternalLink } from 'lucide-react';
 
 const timeAgo = (ts) => {
@@ -23,7 +25,9 @@ export default function AdminWishlist({
   onPurgeItem,
   onEmptyTrash,
   onResetClaims, 
-  onRestoreDefaults,
+  inviteCode,
+  onRotateInvite,
+  legacyImport,
   onImportWishlist, 
   ownerName, 
   onUpdateOwnerName,
@@ -169,12 +173,6 @@ export default function AdminWishlist({
           </div>
 
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            {onRestoreDefaults && (
-              <button onClick={onRestoreDefaults} className="festive-btn-secondary" style={{ fontSize: '0.85rem', padding: '8px 14px', color: '#fbbf24' }}>
-                <RefreshCw style={{ width: '16px', height: '16px' }} />
-                Restore Default Wishlist
-              </button>
-            )}
             <button onClick={handleExportJSON} className="festive-btn-secondary" style={{ fontSize: '0.85rem', padding: '8px 14px' }}>
               <Download style={{ width: '16px', height: '16px' }} />
               Export JSON
@@ -237,19 +235,13 @@ export default function AdminWishlist({
             })}
           </div>
         </div>
+        <InvitePanel inviteCode={inviteCode} ownerName={ownerName} onRotate={onRotateInvite} />
       </div>
 
-      {/* Add / Edit Form Toggle Button */}
-      {!showAddForm && (
-        <button 
-          onClick={() => setShowAddForm(true)} 
-          className="festive-btn-primary"
-          style={{ width: '100%', marginBottom: '28px', padding: '14px' }}
-        >
-          <Plus style={{ width: '20px', height: '20px' }} />
-          Add New Gift to Wishlist
-        </button>
-      )}
+      {legacyImport}
+
+      {/* Add a gift: just paste a link */}
+      {!showAddForm && <AddGiftByLink onAddItem={onAddItem} onManual={() => setShowAddForm(true)} />}
 
       {/* Add / Edit Form */}
       {showAddForm && (
