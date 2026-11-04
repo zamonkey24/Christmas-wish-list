@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# local dev data (accounts and wishlists made while running npm run dev)
+.local-data

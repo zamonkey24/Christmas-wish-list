@@ -21,6 +21,10 @@ Live site: https://giftbloom.netlify.app (Netlify, auto-deploys from GitHub zamo
 
 **Rules for future changes**: starter items in src/data/initialWishlist.js only matter for importing the original list (`addedIn`). Keep owner-only writes server-side. Batch pushes (Netlify credits).
 
+
+## Local development (committed locally, NOT pushed)
+`npm run dev` also runs the real accounts API (tools/dev/file-store.mjs, wired in vite.config.js as a dev-only plugin) and saves to `.local-data/` (gitignored), so local accounts and wishlists survive restarts. Local data is separate from the live site; "Import original wishlist" does not work locally (the original list lives in Netlify). Netlify deploys are PAUSED (out of credits) as of 2026-11-04 - owner decided to keep working locally and push once when it un-pauses. Commit b8cf701 (accounts) WAS pushed to GitHub but cannot deploy while paused.
+
 ---- Older notes (pre-accounts, now obsolete) ----
 # Handoff: festive-gift-quiz (Christmas wishlist site, React+Vite, GitHub zamonkey24/Christmas-wish-list, Netlify auto-deploy)
 
