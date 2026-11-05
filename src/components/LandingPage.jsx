@@ -21,24 +21,14 @@ const STEPS = [
 
 const card = { padding: '22px' };
 
-export default function LandingPage({ user, sharedCount = 0, onSignUp, onLogIn, onOpenMine, onOpenShared }) {
-  const signedIn = Boolean(user);
+// The public home page, for visitors who are not logged in.
+export default function LandingPage({ onSignUp, onLogIn }) {
   return (
     <main style={{ flex: 1, position: 'relative', zIndex: 10 }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 20px 70px' }}>
 
         {/* Hero / welcome */}
         <section className="glass-card animate-fade-in" style={{ padding: '44px 32px', textAlign: 'center', marginBottom: '26px' }}>
-          {signedIn ? (
-            <>
-              <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.6rem)', margin: '0 0 8px' }} className="gold-gradient-text">Welcome back, {user.name}</h1>
-              <p style={{ color: '#94a3b8', fontSize: '1.05rem', margin: '0 0 24px' }}>Here is everything you can do with GiftBloom.</p>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button onClick={onOpenMine} className="festive-btn-primary" style={{ padding: '13px 24px' }}><Gift style={{ width: '18px', height: '18px' }} /> Open my wishlist</button>
-                <button onClick={onOpenShared} className="festive-btn-secondary" style={{ padding: '13px 24px' }}><Users style={{ width: '18px', height: '18px' }} /> Shared with me{sharedCount ? ` (${sharedCount})` : ''}</button>
-              </div>
-            </>
-          ) : (
             <>
               <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.2rem)', lineHeight: 1.1, margin: '0 auto 14px', maxWidth: '760px' }} className="gold-gradient-text">
                 A wishlist your friends can actually shop from
@@ -51,11 +41,10 @@ export default function LandingPage({ user, sharedCount = 0, onSignUp, onLogIn, 
                 <button onClick={onLogIn} className="festive-btn-secondary" style={{ padding: '14px 28px', fontSize: '1rem' }}>Log In</button>
               </div>
             </>
-          )}
         </section>
 
         {/* Dashboard of features */}
-        <h2 style={{ fontSize: '1.3rem', margin: '34px 4px 14px', color: '#e2e8f0' }}>{signedIn ? 'Everything you can do' : 'What you get'}</h2>
+        <h2 style={{ fontSize: '1.3rem', margin: '34px 4px 14px', color: '#e2e8f0' }}>What you get</h2>
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
           {FEATURES.map(({ icon: Icon, title, text }) => (
             <div key={title} className="glass-card" style={card}>
@@ -96,7 +85,7 @@ export default function LandingPage({ user, sharedCount = 0, onSignUp, onLogIn, 
           ))}
         </section>
 
-        {!signedIn && (
+        {(
           <section className="glass-card" style={{ padding: '30px', textAlign: 'center', marginTop: '34px' }}>
             <h2 style={{ fontSize: '1.5rem', margin: '0 0 8px' }} className="gold-gradient-text">Ready to make yours?</h2>
             <p style={{ color: '#94a3b8', margin: '0 0 18px' }}>It takes about a minute.</p>

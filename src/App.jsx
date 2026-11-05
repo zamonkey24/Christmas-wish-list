@@ -24,7 +24,7 @@ const routeFromHash = () => {
 export default function App() {
   const [boot, setBoot] = useState('loading');
   const [me, setMe] = useState(null);         // { user, myListId, joined, marketingOptIn, isAdmin } when logged in
-  const [tab, setTab] = useState('home');     // home | mine | shared | account (logged in)
+  const [tab, setTab] = useState('mine');     // mine | shared | account (logged in); signed-in people land on their wishlist
   const [open, setOpen] = useState(null);     // a wishlist opened from "Shared with me" or an invite: { listId, code? }
   const [invite, setInvite] = useState(null); // an invite waiting for the visitor to log in: { code, listId, ownerName }
   const [route, setRoute] = useState(routeFromHash); // home | login | signup | forgot | reset (logged out)
@@ -124,7 +124,7 @@ export default function App() {
     setResetToken(null);
     setMessage(null);
     navigate('home');
-    setTab(kind === 'signup' ? 'mine' : 'home');
+    setTab('mine');
     const code = safeGet(PENDING_INVITE_KEY);
     if (code) { setOpen(null); await handleInvite(code, true); }
   };
@@ -134,12 +134,18 @@ export default function App() {
     setMe(null);
     setOpen(null);
     setInvite(null);
-    setTab('home');
+    setTab('mine');
     setTheme('classic');
     navigate('home');
   };
 
-  const goTab = (t) => { setTab(t); setOpen(null); setMessage(null); if (!me) navigate('home'); };
+  const goTab = (t) => {
+    // The logo takes logged-in people to their wishlist and logged-out visitors to the home page.
+    setTab(t === 'home' ? 'mine' : t);
+    setOpen(null);
+    setMessage(null);
+    if (!me) navigate('home');
+  };
 
   const shell = (children) => (
     <ThemeContext.Provider value={themeConfig}>
@@ -219,7 +225,6 @@ export default function App() {
 
   // ----- logged in
   if (open) return shell(<ListView key={open.listId} listId={open.listId} code={open.code} onTheme={changeTheme} />);
-  if (tab === 'mine') return shell(<ListView key={me.myListId} listId={me.myListId} onTheme={changeTheme} />);
   if (tab === 'shared') {
     return shell(
       <main style={{ flex: 1, position: 'relative', zIndex: 10 }}>
@@ -229,7 +234,5 @@ export default function App() {
   }
   if (tab === 'account') return shell(<AccountPage me={me} onChanged={refreshMe} onSignOut={signOut} />);
 
-  return shell(
-    <LandingPage user={me.user} sharedCount={me.joined?.length || 0} onOpenMine={() => setTab('mine')} onOpenShared={() => setTab('shared')} />
-  );
+  return shell(<ListView key={me.myListId} listId={me.myListId} onTheme={changeTheme} />);
 }
