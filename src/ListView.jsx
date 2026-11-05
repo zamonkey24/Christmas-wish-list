@@ -58,6 +58,7 @@ export default function ListView({ listId, code, onTheme }) {
   const ready = useRef(false);
 
   useEffect(() => { onTheme?.(listTheme); }, [listTheme]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => onTheme?.('classic'), []); // leaving a wishlist returns to the calm Classic look // eslint-disable-line react-hooks/exhaustive-deps
 
   const applyClaims = (view) => setClaims(splitClaims(view.items).claims);
 

@@ -227,7 +227,7 @@ export default function AdminWishlist({
                   <span>
                     <strong style={{ display: 'block', fontSize: '1rem' }}>{t.emoji} {t.name}{active ? ' (live)' : ''}</strong>
                     <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                      {t.id === 'birthday' ? 'White marble, gold, sparkles' : 'Red & green, snowfall'}
+                      {t.blurb}
                     </span>
                   </span>
                 </button>

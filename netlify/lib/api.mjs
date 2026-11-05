@@ -3,12 +3,18 @@
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
 import { fetchProduct } from './preview.mjs';
+import { createMailer } from './mailer.mjs';
+import { welcomeEmail, resetEmail, promoEmail } from './emails.mjs';
 
 const scrypt = promisify(crypto.scrypt);
 
 const COOKIE = 'gb_session';
 const SESSION_DAYS = 400;
-const THEMES = ['christmas', 'birthday'];
+const THEMES = ['classic', 'christmas', 'birthday'];
+const MIN_PASSWORD = 4;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const RESET_MINUTES = 60;
+const MAX_CAMPAIGN = 300;
 const MAX_BODY = 1_000_000;
 const MAX_ITEMS = 300;
 const LEGACY_SETUP_CODE = '01015'; // the old owner password; lets the original wishlist be imported once
@@ -81,7 +87,10 @@ function cleanItems(arr, limit) {
   return out;
 }
 
-export function createApi({ store, legacyStore = null, fetchProductImpl = fetchProduct, now = () => Date.now() }) {
+export function createApi({ store, legacyStore = null, fetchProductImpl = fetchProduct, now = () => Date.now(), mailer = createMailer(), env = {} }) {
+  const adminEmails = String(env.ADMIN_EMAILS || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
+  const isAdmin = (u) => Boolean(u && (adminEmails.includes(u.login) || adminEmails.includes('*'))); // '*' is for local testing only
+  const siteUrlOf = (req) => (env.SITE_URL || new URL(req.url).origin).replace(/\/$/, '');
   const getJSON = (key) => store.get(key, { type: 'json' });
 
   // ---------- passwords & sessions
@@ -110,7 +119,8 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
     const s = await getJSON(`sessions/${sha256(token)}`);
     if (!s || now() - s.createdAt > SESSION_DAYS * 86400000) return null;
     const user = await getJSON(`users/${s.userId}`);
-    return user ? { user, tokenHash: sha256(token) } : null;
+    if (!user || (s.tv ?? 0) !== (user.tokenVersion ?? 0)) return null;
+    return { user, tokenHash: sha256(token) };
   }
 
   const requireUser = async (req) => {
@@ -121,7 +131,7 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
 
   async function startSession(req, user) {
     const token = rand(32);
-    await store.setJSON(`sessions/${sha256(token)}`, { userId: user.id, createdAt: now() });
+    await store.setJSON(`sessions/${sha256(token)}`, { userId: user.id, createdAt: now(), tv: user.tokenVersion ?? 0 });
     return cookieHeader(req, token, SESSION_DAYS * 86400);
   }
 
@@ -138,13 +148,21 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
     await store.setJSON(`rate/${key}`, { fails: fresh ? 1 : r.fails + 1, first: fresh ? now() : r.first });
   }
   const clearRate = (key) => store.delete(`rate/${key}`);
+  // Counts every call; refuses once `max` calls happen inside `windowMs`.
+  async function hit(key, max, windowMs) {
+    const r = await getJSON(`rate/${key}`);
+    const fresh = !r || now() - r.first >= windowMs;
+    const count = fresh ? 1 : r.fails + 1;
+    await store.setJSON(`rate/${key}`, { fails: count, first: fresh ? now() : r.first });
+    if (count > max) throw new HttpError(429, 'Too many requests. Please try again later.');
+  }
 
   // ---------- lists
   async function newList(user) {
     const id = `l_${rand(6)}`;
     const code = inviteCode();
     const list = {
-      id, ownerId: user.id, ownerName: user.name, items: [], trash: [], theme: 'christmas',
+      id, ownerId: user.id, ownerName: user.name, items: [], trash: [], theme: 'classic',
       inviteCode: code, legacyVersion: null, createdAt: now(), updatedAt: now()
     };
     await store.setJSON(`lists/${id}`, list);
@@ -226,28 +244,36 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
   async function signup(req) {
     const b = await readBody(req);
     const name = str(b.name, 40);
-    const login = str(b.login, 80).toLowerCase();
+    const email = str(b.email ?? b.login, 120).toLowerCase();
     const password = typeof b.password === 'string' ? b.password : '';
     if (!name) throw new HttpError(400, 'Please enter your name.');
-    if (!/^[a-z0-9._+@-]{3,80}$/.test(login)) throw new HttpError(400, 'Use an email or username with 3+ letters or numbers.');
-    if (password.length < 6 || password.length > 200) throw new HttpError(400, 'Your password needs at least 6 characters.');
+    if (!EMAIL_RE.test(email)) throw new HttpError(400, 'Please enter a real email address.');
+    if (password.length < MIN_PASSWORD || password.length > 200) throw new HttpError(400, `Your password needs at least ${MIN_PASSWORD} characters.`);
 
     const id = `u_${rand(6)}`;
-    const claimed = await store.setJSON(`logins/${login}`, { userId: id }, { onlyIfNew: true });
-    if (claimed?.modified === false) throw new HttpError(409, 'That email or username is already taken. Try signing in.');
+    const claimed = await store.setJSON(`logins/${email}`, { userId: id }, { onlyIfNew: true });
+    if (claimed?.modified === false) throw new HttpError(409, 'There is already an account with that email. Try logging in.');
 
     const salt = rand(16);
-    const user = { id, login, name, salt, hash: await hashPassword(password, salt), joined: [], myListId: null, createdAt: now() };
+    const unsubToken = rand(16);
+    const user = {
+      id, login: email, name, salt, hash: await hashPassword(password, salt), joined: [], myListId: null, createdAt: now(),
+      tokenVersion: 0, marketingOptIn: b.marketingOptIn === true, unsubToken
+    };
     const list = await newList(user);
     user.myListId = list.id;
     await store.setJSON(`users/${id}`, user);
+    await store.setJSON(`unsubs/${unsubToken}`, { userId: id });
     const setCookie = await startSession(req, user);
-    return json({ user: publicUser(user), myListId: list.id, joined: [] }, 200, { 'set-cookie': setCookie });
+    // A welcome note is nice to have, but signing up must never fail because email did.
+    const welcome = welcomeEmail({ name, siteUrl: siteUrlOf(req) });
+    mailer.send({ to: email, ...welcome }).catch(() => {});
+    return json(await meBody(user), 200, { 'set-cookie': setCookie });
   }
 
   async function login(req) {
     const b = await readBody(req);
-    const loginName = str(b.login, 80).toLowerCase();
+    const loginName = str(b.email ?? b.login, 120).toLowerCase();
     const password = typeof b.password === 'string' ? b.password : '';
     await checkRate(`login/${loginName}`);
     const idx = loginName ? await getJSON(`logins/${loginName}`) : null;
@@ -276,7 +302,7 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
       if (l) joined.push({ listId: j.listId, ownerName: l.ownerName, theme: l.theme, addedAt: j.addedAt });
     }
     const mine = user.myListId ? await getJSON(`lists/${user.myListId}`) : null;
-    return { user: publicUser(user), myListId: user.myListId, myTheme: mine?.theme || 'christmas', joined };
+    return { user: publicUser(user), myListId: user.myListId, myTheme: mine?.theme || 'classic', joined, marketingOptIn: Boolean(user.marketingOptIn), isAdmin: isAdmin(user) };
   }
 
   async function me(req) {
@@ -382,6 +408,123 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
     return json({ inviteCode: code });
   }
 
+  async function config() {
+    return json({ emailEnabled: mailer.enabled });
+  }
+
+  async function forgot(req) {
+    const b = await readBody(req);
+    const email = str(b.email, 120).toLowerCase();
+    if (!EMAIL_RE.test(email)) throw new HttpError(400, 'Please enter the email you signed up with.');
+    await hit(`forgot/${email}`, 3, 60 * 60000);
+    const idx = await getJSON(`logins/${email}`);
+    const user = idx ? await getJSON(`users/${idx.userId}`) : null;
+    // Same answer whether or not the email has an account, so nobody can use this to find out who has one.
+    if (user && mailer.enabled) {
+      const token = rand(32);
+      await store.setJSON(`resets/${sha256(token)}`, { userId: user.id, exp: now() + RESET_MINUTES * 60000 });
+      const link = `${siteUrlOf(req)}/?reset=${token}`;
+      await mailer.send({ to: user.login, ...resetEmail({ name: user.name, link }) });
+    }
+    return json({ ok: true, emailEnabled: mailer.enabled });
+  }
+
+  async function reset(req) {
+    const b = await readBody(req);
+    const token = str(b.token, 100);
+    const password = typeof b.password === 'string' ? b.password : '';
+    if (password.length < MIN_PASSWORD || password.length > 200) throw new HttpError(400, `Your password needs at least ${MIN_PASSWORD} characters.`);
+    const r = token ? await getJSON(`resets/${sha256(token)}`) : null;
+    if (!r || r.exp < now()) throw new HttpError(400, 'That reset link has expired. Ask for a new one.');
+    const user = await getJSON(`users/${r.userId}`);
+    if (!user) throw new HttpError(400, 'That reset link has expired. Ask for a new one.');
+    user.salt = rand(16);
+    user.hash = await hashPassword(password, user.salt);
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1; // signs the old sessions out
+    await store.setJSON(`users/${user.id}`, user);
+    await store.delete(`resets/${sha256(token)}`);
+    await clearRate(`login/${user.login}`);
+    const setCookie = await startSession(req, user);
+    return json(await meBody(user), 200, { 'set-cookie': setCookie });
+  }
+
+  async function setPreferences(req) {
+    const user = await requireUser(req);
+    const b = await readBody(req);
+    const fresh = await getJSON(`users/${user.id}`);
+    if (typeof b.marketingOptIn === 'boolean') {
+      fresh.marketingOptIn = b.marketingOptIn;
+      if (!fresh.unsubToken) {
+        fresh.unsubToken = rand(16);
+        await store.setJSON(`unsubs/${fresh.unsubToken}`, { userId: fresh.id });
+      }
+    }
+    const name = str(b.name, 40);
+    if (name) fresh.name = name;
+    await store.setJSON(`users/${fresh.id}`, fresh);
+    return json(await meBody(fresh));
+  }
+
+  async function unsubscribe(req) {
+    const b = await readBody(req);
+    const token = str(b.token, 60);
+    const idx = token ? await getJSON(`unsubs/${token}`) : null;
+    const user = idx ? await getJSON(`users/${idx.userId}`) : null;
+    if (!user) throw new HttpError(404, 'That unsubscribe link is not valid.');
+    user.marketingOptIn = false;
+    await store.setJSON(`users/${user.id}`, user);
+    return json({ ok: true });
+  }
+
+  async function subscribers() {
+    const { blobs } = await store.list({ prefix: 'users/' });
+    const out = [];
+    for (const { key } of blobs) {
+      const u = await getJSON(key);
+      if (u?.marketingOptIn && u.unsubToken) out.push(u);
+    }
+    return out;
+  }
+
+  async function requireAdmin(req) {
+    const user = await requireUser(req);
+    if (!isAdmin(user)) throw new HttpError(403, 'Only the site owner can do that.');
+    return user;
+  }
+
+  async function adminStats(req) {
+    await requireAdmin(req);
+    return json({ subscribers: (await subscribers()).length, emailEnabled: mailer.enabled, addressSet: Boolean(env.MAIL_ADDRESS) });
+  }
+
+  async function campaign(req) {
+    const admin = await requireAdmin(req);
+    const b = await readBody(req);
+    const subject = str(b.subject, 120);
+    const message = str(b.message, 5000);
+    if (!subject || !message) throw new HttpError(400, 'Add a subject and a message first.');
+    if (!mailer.enabled) throw new HttpError(400, 'Email is not set up on this site yet.');
+    if (!env.MAIL_ADDRESS) throw new HttpError(400, 'Set MAIL_ADDRESS (a mailing address shown at the bottom of every promotional email) before sending.');
+    const siteUrl = siteUrlOf(req);
+    const makeFor = (u) => promoEmail({ name: u.name, subject, message, siteUrl, address: env.MAIL_ADDRESS, unsubscribeUrl: `${siteUrl}/?unsubscribe=${u.unsubToken}` });
+
+    if (b.testOnly) {
+      const a = (await getJSON(`users/${admin.id}`)) || admin;
+      if (!a.unsubToken) { a.unsubToken = rand(16); await store.setJSON(`users/${a.id}`, a); await store.setJSON(`unsubs/${a.unsubToken}`, { userId: a.id }); }
+      const r = await mailer.send({ to: a.login, ...makeFor(a) });
+      if (!r.ok) throw new HttpError(502, r.reason);
+      return json({ sent: 1, failed: 0, total: 1, test: true });
+    }
+    const list = await subscribers();
+    if (list.length > MAX_CAMPAIGN) throw new HttpError(400, `That is more than ${MAX_CAMPAIGN} people for one send.`);
+    let sent = 0, failed = 0;
+    for (let i = 0; i < list.length; i += 10) {
+      const results = await Promise.all(list.slice(i, i + 10).map(u => mailer.send({ to: u.login, ...makeFor(u) })));
+      results.forEach(r => (r.ok ? sent++ : failed++));
+    }
+    return json({ sent, failed, total: list.length });
+  }
+
   async function preview(req) {
     await requireUser(req);
     const b = await readBody(req);
@@ -453,6 +596,13 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
       if (path === 'auth/signup' && m === 'POST') return await signup(req);
       if (path === 'auth/login' && m === 'POST') return await login(req);
       if (path === 'auth/logout' && m === 'POST') return await logout(req);
+      if (path === 'auth/forgot' && m === 'POST') return await forgot(req);
+      if (path === 'auth/reset' && m === 'POST') return await reset(req);
+      if (path === 'config' && m === 'GET') return await config();
+      if (path === 'account/preferences' && m === 'POST') return await setPreferences(req);
+      if (path === 'unsubscribe' && m === 'POST') return await unsubscribe(req);
+      if (path === 'admin/stats' && m === 'GET') return await adminStats(req);
+      if (path === 'admin/campaign' && m === 'POST') return await campaign(req);
       if (path === 'me' && m === 'GET') return await me(req);
       if (seg[0] === 'invite' && seg.length === 2 && m === 'GET') return await inviteInfo(seg[1]);
       if (path === 'join' && m === 'POST') return await join(req);

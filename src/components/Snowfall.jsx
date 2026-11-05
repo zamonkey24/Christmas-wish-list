@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-export default function Snowfall({ variant = 'snow' }) {
+function Particles({ variant }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -87,4 +87,9 @@ export default function Snowfall({ variant = 'snow' }) {
       className="snowfall-container"
     />
   );
+}
+
+// The Classic theme has no falling particles at all.
+export default function Snowfall({ variant = 'snow' }) {
+  return variant === 'none' ? null : <Particles key={variant} variant={variant} />;
 }

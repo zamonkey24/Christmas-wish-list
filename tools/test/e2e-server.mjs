@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApi } from '../../netlify/lib/api.mjs';
 import { parseProductPage } from '../../netlify/lib/preview.mjs';
+import { createMailer } from '../../netlify/lib/mailer.mjs';
 import { createMemoryStore } from './memory-store.mjs';
 import { DEFAULT_WISHLIST } from '../../src/data/initialWishlist.js';
 
@@ -24,11 +25,14 @@ const fetchProductImpl = async (url) => {
   if (url.includes('shop.test/nophoto')) return { title: 'Mystery Candle Set', image: null, price: null, site: 'shop.test', url };
   throw new Error('That site would not let us read the page (503).');
 };
-const api = createApi({ store, legacyStore, fetchProductImpl });
+const mails = []; // emails the site "sent", readable at /__outbox.json
+const mailer = createMailer({ outbox: async (m) => { mails.unshift(m); } });
+const api = createApi({ store, legacyStore, fetchProductImpl, mailer, env: { ADMIN_EMAILS: 'arav@example.com', MAIL_ADDRESS: '1 Test St, Testville' } });
 
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.png': 'image/png' };
 http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${port}`);
+  if (url.pathname === '/__outbox.json') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(mails)); }
   if (url.pathname.startsWith('/api/')) {
     const chunks = []; for await (const c of req) chunks.push(c);
     const request = new Request(url, { method: req.method, headers: req.headers, body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks) });

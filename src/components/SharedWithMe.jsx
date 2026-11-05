@@ -45,7 +45,7 @@ export default function SharedWithMe({ joined, onOpen, onChanged }) {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px', marginBottom: '22px' }}>
           {joined.map(l => {
-            const t = THEMES[l.theme] || THEMES.christmas;
+            const t = THEMES[l.theme] || THEMES.classic;
             return (
               <div key={l.listId} className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

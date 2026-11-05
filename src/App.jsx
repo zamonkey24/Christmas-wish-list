@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AccountBar from './components/AccountBar';
+import AccountPage from './components/AccountPage';
 import AuthScreen from './components/AuthScreen';
+import InviteLanding from './components/InviteLanding';
+import LandingPage from './components/LandingPage';
 import SharedWithMe from './components/SharedWithMe';
 import Snowfall from './components/Snowfall';
 import { Notice, Spinner } from './components/ui';
@@ -9,34 +12,32 @@ import { THEMES, ThemeContext } from './ThemeContext';
 import { api } from './api';
 
 const PENDING_INVITE_KEY = 'giftbloom_pending_invite';
-const THEME_STORAGE_KEY = 'festive_gift_quiz_theme_v1';
+const AUTH_ROUTES = ['login', 'signup', 'forgot', 'reset'];
 
 const safeGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const safeSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* storage unavailable */ } };
+const routeFromHash = () => {
+  const r = window.location.hash.replace(/^#\/?/, '');
+  return ['login', 'signup', 'forgot'].includes(r) ? r : 'home';
+};
 
 export default function App() {
   const [boot, setBoot] = useState('loading');
-  const [me, setMe] = useState(null);       // { user, myListId, joined } when signed in
-  const [tab, setTab] = useState('mine');   // mine | shared
-  const [open, setOpen] = useState(null);   // a wishlist opened from "Shared with me" or an invite: { listId, code? }
-  const [invite, setInvite] = useState(null); // an invite waiting for the visitor to sign in: { code, listId, ownerName }
-  const [authMode, setAuthMode] = useState(null); // null | 'signup' | 'login'
+  const [me, setMe] = useState(null);         // { user, myListId, joined, marketingOptIn, isAdmin } when logged in
+  const [tab, setTab] = useState('home');     // home | mine | shared | account (logged in)
+  const [open, setOpen] = useState(null);     // a wishlist opened from "Shared with me" or an invite: { listId, code? }
+  const [invite, setInvite] = useState(null); // an invite waiting for the visitor to log in: { code, listId, ownerName }
+  const [route, setRoute] = useState(routeFromHash); // home | login | signup | forgot | reset (logged out)
+  const [resetToken, setResetToken] = useState(null);
+  const [message, setMessage] = useState(null); // a simple full-page message, e.g. after unsubscribing
   const [notice, setNotice] = useState('');
 
-  // ?theme=birthday|christmas previews a look on this device only.
+  // The home page and account screens use the calm Classic look; an open wishlist uses its own theme.
+  // ?theme=birthday|christmas|classic previews a look on this device only.
   const previewTheme = new URLSearchParams(window.location.search).get('theme');
-  const [theme, setTheme] = useState(() => {
-    if (THEMES[previewTheme]) return previewTheme;
-    const saved = safeGet(THEME_STORAGE_KEY);
-    return THEMES[saved] ? saved : 'christmas';
-  });
+  const [theme, setTheme] = useState(THEMES[previewTheme] ? previewTheme : 'classic');
   const themeConfig = THEMES[theme];
-
-  const changeTheme = useCallback((t) => {
-    if (!THEMES[t]) return;
-    setTheme(t);
-    if (!THEMES[previewTheme]) safeSet(THEME_STORAGE_KEY, t);
-  }, [previewTheme]);
+  const changeTheme = useCallback((t) => { if (THEMES[t] && !THEMES[previewTheme]) setTheme(t); }, [previewTheme]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -52,17 +53,30 @@ export default function App() {
     document.querySelector("meta[name='description']")?.setAttribute('content', themeConfig.description);
   }, [theme, themeConfig]);
 
+  // Log In / Sign Up live on their own page, reachable with the browser's back button.
+  const navigate = useCallback((r) => {
+    const url = window.location.pathname + window.location.search + (r === 'home' || r === 'reset' ? '' : `#/${r}`);
+    window.history.pushState(null, '', url);
+    setRoute(r);
+    window.scrollTo(0, 0);
+  }, []);
+  useEffect(() => {
+    const onPop = () => setRoute(prev => (prev === 'reset' ? prev : routeFromHash()));
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   const refreshMe = useCallback(async () => {
     const body = await api('GET', 'me');
     setMe(body.user ? body : null);
     return body.user ? body : null;
   }, []);
 
-  // An invite link: signed-in people get it saved to their account right away; others are asked to sign in.
-  const handleInvite = useCallback(async (code, signedIn) => {
+  // An invite link: logged-in people get it saved to their account right away; others are asked to log in or sign up.
+  const handleInvite = useCallback(async (code, loggedIn) => {
     try {
       const info = await api('GET', `invite/${code}`);
-      if (signedIn) {
+      if (loggedIn) {
         const j = await api('POST', 'join', { code });
         safeSet(PENDING_INVITE_KEY, null);
         await refreshMe();
@@ -81,25 +95,36 @@ export default function App() {
   useEffect(() => {
     (async () => {
       const url = new URL(window.location.href);
-      let code = url.searchParams.get('invite');
-      if (code) {
-        safeSet(PENDING_INVITE_KEY, code);
-        url.searchParams.delete('invite');
-        window.history.replaceState(null, '', url.pathname + url.search + url.hash);
-      } else {
-        code = safeGet(PENDING_INVITE_KEY);
+      const take = (k) => { const v = url.searchParams.get(k); if (v) url.searchParams.delete(k); return v; };
+      const reset = take('reset');
+      const unsubscribe = take('unsubscribe');
+      let code = take('invite');
+      if (reset || unsubscribe || code) window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+      if (code) safeSet(PENDING_INVITE_KEY, code); else code = safeGet(PENDING_INVITE_KEY);
+
+      if (unsubscribe) {
+        try {
+          await api('POST', 'unsubscribe', { token: unsubscribe });
+          setMessage({ title: 'You are unsubscribed', text: 'You will not get any more updates from GiftBloom. Your account and wishlists are not affected.' });
+        } catch (e) {
+          setMessage({ title: 'That link did not work', text: e.message });
+        }
       }
-      let signedIn = null;
-      try { signedIn = await refreshMe(); } catch { /* offline: show sign in */ }
-      if (code) await handleInvite(code, Boolean(signedIn));
+      if (reset) { setResetToken(reset); setRoute('reset'); }
+
+      let loggedIn = null;
+      try { loggedIn = await refreshMe(); } catch { /* offline: show the home page */ }
+      if (code && !reset) await handleInvite(code, Boolean(loggedIn));
       setBoot('ready');
     })();
   }, [refreshMe, handleInvite]);
 
-  const onAuthed = async (meBody) => {
+  const onAuthed = async (meBody, kind) => {
     setMe(meBody);
-    setAuthMode(null);
-    setTab('mine');
+    setResetToken(null);
+    setMessage(null);
+    navigate('home');
+    setTab(kind === 'signup' ? 'mine' : 'home');
     const code = safeGet(PENDING_INVITE_KEY);
     if (code) { setOpen(null); await handleInvite(code, true); }
   };
@@ -109,25 +134,27 @@ export default function App() {
     setMe(null);
     setOpen(null);
     setInvite(null);
-    setTab('mine');
+    setTab('home');
+    setTheme('classic');
+    navigate('home');
   };
 
-  const goTab = (t) => { setTab(t); setOpen(null); };
+  const goTab = (t) => { setTab(t); setOpen(null); setMessage(null); if (!me) navigate('home'); };
 
-  const shell = (children, { bar = true } = {}) => (
+  const shell = (children) => (
     <ThemeContext.Provider value={themeConfig}>
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', '--accountbar-h': bar ? '46px' : '0px' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', '--accountbar-h': '46px' }}>
         <Snowfall variant={themeConfig.particles} />
-        {bar && (
-          <AccountBar
-            user={me?.user}
-            tab={open && tab === 'mine' ? 'shared' : tab}
-            sharedCount={me?.joined?.length || 0}
-            onTab={goTab}
-            onSignOut={signOut}
-            onSignIn={() => setAuthMode('signup')}
-          />
-        )}
+        <AccountBar
+          user={me?.user}
+          tab={open ? 'shared' : tab}
+          sharedCount={me?.joined?.length || 0}
+          authMode={AUTH_ROUTES.includes(route) ? route : null}
+          onTab={goTab}
+          onSignOut={signOut}
+          onLogIn={() => navigate('login')}
+          onSignUp={() => navigate('signup')}
+        />
         {notice && (
           <div style={{ position: 'relative', zIndex: 20, maxWidth: '760px', width: '100%', margin: '14px auto 0', padding: '0 20px' }}>
             <Notice onClose={() => setNotice('')}>{notice}</Notice>
@@ -138,34 +165,61 @@ export default function App() {
     </ThemeContext.Provider>
   );
 
-  if (boot === 'loading') return shell(<Spinner />, { bar: false });
+  if (boot === 'loading') return shell(<Spinner />);
 
-  // Someone looking at a wishlist from an invite link without an account
-  if (!me && open) {
-    return shell(
-      authMode
-        ? <main style={{ flex: 1, position: 'relative', zIndex: 10 }}><AuthScreen initialMode={authMode} invite={invite} onAuthed={onAuthed} onCancel={() => setAuthMode(null)} /></main>
-        : <ListView key={open.listId} listId={open.listId} code={open.code} onTheme={changeTheme} />
-    );
-  }
-
-  if (!me) {
+  if (message) {
     return shell(
       <main style={{ flex: 1, position: 'relative', zIndex: 10 }}>
-        <AuthScreen
-          initialMode="signup"
-          invite={invite}
-          onAuthed={onAuthed}
-          onOpenAnonymously={invite ? () => setOpen({ listId: invite.listId, code: invite.code }) : undefined}
-        />
-      </main>,
-      { bar: false }
+        <div style={{ maxWidth: '480px', margin: '60px auto', padding: '0 20px' }}>
+          <div className="glass-card" style={{ padding: '32px', textAlign: 'center' }}>
+            <h1 style={{ fontSize: '1.5rem', margin: '0 0 8px' }} className="gold-gradient-text">{message.title}</h1>
+            <p style={{ color: '#94a3b8', margin: '0 0 20px' }}>{message.text}</p>
+            <button className="festive-btn-primary" onClick={() => setMessage(null)}>Go to GiftBloom</button>
+          </div>
+        </div>
+      </main>
     );
   }
 
-  // Signed in
-  if (open) return shell(<ListView key={open.listId} listId={open.listId} code={open.code} onTheme={changeTheme} />);
+  // A password-reset link always opens the reset page, even if someone is already logged in.
+  if (route === 'reset' && resetToken) {
+    return shell(
+      <AuthScreen mode="reset" resetToken={resetToken} onAuthed={onAuthed} onNavigate={navigate} onBack={() => { setResetToken(null); navigate('home'); }} />
+    );
+  }
 
+  // ----- logged out
+  if (!me) {
+    if (AUTH_ROUTES.includes(route)) {
+      return shell(
+        <AuthScreen
+          mode={route}
+          invite={invite}
+          resetToken={resetToken}
+          onAuthed={onAuthed}
+          onNavigate={navigate}
+          onBack={() => { setResetToken(null); navigate('home'); }}
+          onOpenAnonymously={invite ? () => { setOpen({ listId: invite.listId, code: invite.code }); navigate('home'); } : undefined}
+        />
+      );
+    }
+    if (open) return shell(<ListView key={open.listId} listId={open.listId} code={open.code} onTheme={changeTheme} />);
+    if (invite) {
+      return shell(
+        <InviteLanding
+          invite={invite}
+          onSignUp={() => navigate('signup')}
+          onLogIn={() => navigate('login')}
+          onLook={() => setOpen({ listId: invite.listId, code: invite.code })}
+        />
+      );
+    }
+    return shell(<LandingPage onSignUp={() => navigate('signup')} onLogIn={() => navigate('login')} />);
+  }
+
+  // ----- logged in
+  if (open) return shell(<ListView key={open.listId} listId={open.listId} code={open.code} onTheme={changeTheme} />);
+  if (tab === 'mine') return shell(<ListView key={me.myListId} listId={me.myListId} onTheme={changeTheme} />);
   if (tab === 'shared') {
     return shell(
       <main style={{ flex: 1, position: 'relative', zIndex: 10 }}>
@@ -173,6 +227,9 @@ export default function App() {
       </main>
     );
   }
+  if (tab === 'account') return shell(<AccountPage me={me} onChanged={refreshMe} onSignOut={signOut} />);
 
-  return shell(<ListView key={me.myListId} listId={me.myListId} onTheme={changeTheme} />);
+  return shell(
+    <LandingPage user={me.user} sharedCount={me.joined?.length || 0} onOpenMine={() => setTab('mine')} onOpenShared={() => setTab('shared')} />
+  );
 }

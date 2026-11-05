@@ -8,10 +8,14 @@ let passed = 0;
 const test = async (name, fn) => { try { await fn(); passed++; console.log('  ok  ', name); } catch (e) { console.log('  FAIL', name, '\n      ', e.message); process.exitCode = 1; } };
 
 const store = createMemoryStore();
+let clockOffset = 0;
+const sent = []; // every email the site tried to send
+const mailer = { enabled: true, send: async (m) => { if (m.to.startsWith('broken@')) return { ok: false, reason: 'boom' }; sent.push(m); return { ok: true }; } };
 const legacyStore = createMemoryStore();
 const previews = [];
 const api = createApi({
-  store, legacyStore,
+  store, legacyStore, mailer, now: () => Date.now() + clockOffset,
+  env: { ADMIN_EMAILS: 'arav@example.com', MAIL_ADDRESS: '1 Example St, Springfield', SITE_URL: 'https://giftbloom.test' },
   fetchProductImpl: async (url) => { previews.push(url); if (url.includes('bad')) throw new Error('Could not open that link.'); return { title: 'Test Gift', image: 'https://img.example/x.jpg', price: 42, site: 'example.com', url }; }
 });
 
@@ -49,6 +53,12 @@ await test('duplicate login is rejected (case-insensitive)', async () => {
 await test('weak password / bad login rejected', async () => {
   assert.equal((await client()('POST', 'auth/signup', { name: 'X', login: 'ok@x.com', password: '123' })).status, 400);
   assert.equal((await client()('POST', 'auth/signup', { name: 'X', login: 'a b', password: 'secret1' })).status, 400);
+  assert.equal((await client()('POST', 'auth/signup', { name: 'X', login: 'justausername', password: 'secret1' })).status, 400);
+});
+await test('a 4-digit password is enough', async () => {
+  const c = client(); const r = await c('POST', 'auth/signup', { name: 'Pin', email: 'pin@example.com', password: '4321' });
+  assert.equal(r.status, 200);
+  const c2 = client(); assert.equal((await c2('POST', 'auth/login', { email: 'pin@example.com', password: '4321' })).status, 200);
 });
 await test('/me knows the signed-in user and nobody else', async () => {
   assert.equal((await arav('GET', 'me')).body.user.name, 'Arav');
@@ -118,7 +128,7 @@ await test('anyone with the code can view (and claim) without an account', async
   assert.equal(r.status, 200); assert.equal(r.body.isOwner, false); assert.equal(r.body.trash, undefined); assert.equal(r.body.inviteCode, undefined);
 });
 await test('joining saves the wishlist on the account', async () => {
-  samMe = (await sam('POST', 'auth/signup', { name: 'Sam', login: 'sam', password: 'hunter22' })).body;
+  samMe = (await sam('POST', 'auth/signup', { name: 'Sam', login: 'sam@example.com', password: 'hunter22' })).body;
   assert.equal(samMe.joined.length, 0);
   const j = await sam('POST', 'join', { code });
   assert.equal(j.status, 200); assert.equal(j.body.listId, listId);
@@ -138,7 +148,7 @@ await test('joining needs an account', async () => {
   assert.equal((await anon('POST', 'join', { code })).status, 401);
 });
 await test('leaving removes it from the account', async () => {
-  const sam2 = client(); await sam2('POST', 'auth/login', { login: 'sam', password: 'hunter22' });
+  const sam2 = client(); await sam2('POST', 'auth/login', { login: 'sam@example.com', password: 'hunter22' });
   await sam2('POST', 'leave', { listId });
   assert.equal((await sam2('GET', 'me')).body.joined.length, 0);
   await sam2('POST', 'join', { code });
@@ -219,12 +229,12 @@ await test('Sam has a separate empty wishlist that Arav cannot edit', async () =
 console.log('original wishlist import');
 await test('availability check: only signed-in people, and only until it is imported', async () => {
   assert.equal((await anon('GET', 'legacy')).status, 401);
-  const fresh = client(); await fresh('POST', 'auth/signup', { name: 'F', login: 'fresh1', password: 'freshpw1' });
+  const fresh = client(); await fresh('POST', 'auth/signup', { name: 'F', login: 'fresh1@example.com', password: 'freshpw1' });
   await legacyStore.setJSON('wishlist-state', { items: [item('o1', 99)], ownerName: 'Arav', version: 11 });
   assert.equal((await fresh('GET', 'legacy')).body.available, true);
 });
 await test('wrong setup code is refused; right code imports items, trash, claims, theme once', async () => {
-  const u = client(); const me = (await u('POST', 'auth/signup', { name: 'Owner', login: 'owner', password: 'ownerpw1' })).body;
+  const u = client(); const me = (await u('POST', 'auth/signup', { name: 'Owner', login: 'owner@example.com', password: 'ownerpw1' })).body;
   await legacyStore.setJSON('wishlist-state', { items: [item('o1', 99, { claimed: true, claimedBy: 'Gran', claimedNote: 'love' }), item('o2', 12)], ownerName: 'Arav', version: 11, theme: 'birthday', trash: [{ ...item('t1', 5), deletedAt: 1 }], knownIds: ['o1'] });
   assert.equal((await u('POST', 'import-legacy', { setupCode: '0000' })).status, 403);
   const ok = await u('POST', 'import-legacy', { setupCode: '01015' });
@@ -265,6 +275,128 @@ await test('private / local addresses are refused (no snooping on the server net
   }
   await assert.rejects(() => assertPublicUrl('https://sneaky.example/', async () => [{ address: '10.1.2.3' }]));
   await assertPublicUrl('https://example.com/', async () => [{ address: '93.184.216.34' }]);
+});
+
+
+console.log('forgot password');
+const resetLink = () => { const m = sent.filter(x => x.subject.includes('Reset')).pop(); return m ? m.text.match(/reset=([a-f0-9]+)/)?.[1] : null; };
+await test('config says email is available', async () => { assert.equal((await anon('GET', 'config')).body.emailEnabled, true); });
+await test('forgot: same answer for real and unknown emails, and the email goes only to the real one', async () => {
+  const before = sent.length;
+  const real = await anon('POST', 'auth/forgot', { email: 'sam@example.com' });
+  const fake = await anon('POST', 'auth/forgot', { email: 'nobody@example.com' });
+  assert.equal(real.status, 200); assert.equal(fake.status, 200); assert.deepEqual(real.body, fake.body);
+  assert.equal(sent.length, before + 1); assert.equal(sent[sent.length - 1].to, 'sam@example.com');
+  assert.match(sent[sent.length - 1].text, /https:\/\/giftbloom\.test\/\?reset=[a-f0-9]{64}/);
+});
+await test('forgot: asking over and over is limited', async () => {
+  for (let i = 0; i < 2; i++) await anon('POST', 'auth/forgot', { email: 'sam@example.com' });
+  assert.equal((await anon('POST', 'auth/forgot', { email: 'sam@example.com' })).status, 429);
+  await store.delete('rate/forgot/sam@example.com');
+});
+await test('reset: bad token and short password are refused', async () => {
+  assert.equal((await anon('POST', 'auth/reset', { token: 'nope', password: 'newpass1' })).status, 400);
+  await anon('POST', 'auth/forgot', { email: 'sam@example.com' });
+  assert.equal((await anon('POST', 'auth/reset', { token: resetLink(), password: '12' })).status, 400);
+});
+await test('reset: sets the new password, signs in, signs old sessions out, link works once', async () => {
+  const oldSam = client(); await oldSam('POST', 'auth/login', { email: 'sam@example.com', password: 'hunter22' });
+  await anon('POST', 'auth/forgot', { email: 'sam@example.com' });
+  const token = resetLink();
+  const c = client();
+  const r = await c('POST', 'auth/reset', { token, password: '9876' });
+  assert.equal(r.status, 200); assert.equal(r.body.user.name, 'Sam');
+  assert.equal((await c('GET', 'me')).body.user.name, 'Sam');
+  assert.equal((await client()('POST', 'auth/login', { email: 'sam@example.com', password: 'hunter22' })).status, 401);
+  assert.equal((await client()('POST', 'auth/login', { email: 'sam@example.com', password: '9876' })).status, 200);
+  assert.equal((await oldSam('GET', 'me')).body.user, null);
+  assert.equal((await anon('POST', 'auth/reset', { token, password: 'again11' })).status, 400);
+});
+await test('reset: the link expires after an hour', async () => {
+  await anon('POST', 'auth/forgot', { email: 'arav@example.com' });
+  const token = resetLink();
+  clockOffset = 61 * 60000;
+  assert.equal((await anon('POST', 'auth/reset', { token, password: 'late1234' })).status, 400);
+  clockOffset = 0;
+});
+await test('reset also clears a login lockout', async () => {
+  await store.setJSON('rate/login/arav@example.com', { fails: 8, first: Date.now() });
+  await anon('POST', 'auth/forgot', { email: 'arav@example.com' });
+  assert.equal((await client()('POST', 'auth/reset', { token: resetLink(), password: 'secret1' })).status, 200);
+  assert.equal((await client()('POST', 'auth/login', { email: 'arav@example.com', password: 'secret1' })).status, 200);
+});
+await test('without an email service the answer says so instead of pretending', async () => {
+  const noMail = createApi({ store, mailer: { enabled: false, send: async () => ({ ok: false }) } });
+  const res = await noMail.handle(new Request('https://site.test/api/auth/forgot', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'sam@example.com' }) }));
+  assert.equal((await res.json()).emailEnabled, false);
+});
+
+console.log('emails');
+await arav('POST', 'auth/login', { email: 'arav@example.com', password: 'secret1' });
+await sam('POST', 'auth/login', { email: 'sam@example.com', password: '9876' });
+await test('signing up sends a welcome email, and a broken mail service never blocks signing up', async () => {
+  const before = sent.length;
+  const r = await client()('POST', 'auth/signup', { name: 'Wen', email: 'wen@example.com', password: '1234' });
+  assert.equal(r.status, 200);
+  await new Promise(r => setTimeout(r, 20));
+  assert.ok(sent.slice(before).some(m => m.to === 'wen@example.com' && m.subject.includes('Welcome')));
+  assert.equal((await client()('POST', 'auth/signup', { name: 'Brk', email: 'broken@example.com', password: '1234' })).status, 200);
+});
+await test('promotional emails are opt-in: off unless the box is ticked', async () => {
+  assert.equal((await arav('GET', 'me')).body.marketingOptIn, false);
+  const yes = client(); const r = await yes('POST', 'auth/signup', { name: 'Yes', email: 'yes@example.com', password: '1234', marketingOptIn: true });
+  assert.equal(r.body.marketingOptIn, true);
+});
+await test('people can change their email preference and name', async () => {
+  const r = await sam('POST', 'account/preferences', { marketingOptIn: true, name: 'Sammy' });
+  assert.equal(r.body.marketingOptIn, true); assert.equal(r.body.user.name, 'Sammy');
+  assert.equal((await anon('POST', 'account/preferences', { marketingOptIn: true })).status, 401);
+});
+await test('campaign: only the owner (ADMIN_EMAILS) can send or see counts', async () => {
+  assert.equal((await sam('GET', 'admin/stats')).status, 403);
+  assert.equal((await sam('POST', 'admin/campaign', { subject: 's', message: 'm' })).status, 403);
+  assert.equal((await anon('GET', 'admin/stats')).status, 401);
+  const stats = (await arav('GET', 'admin/stats')).body;
+  assert.equal(stats.subscribers, 2); assert.equal(stats.emailEnabled, true); assert.equal(stats.addressSet, true);
+  assert.equal((await arav('GET', 'me')).body.isAdmin, true); assert.equal((await sam('GET', 'me')).body.isAdmin, false);
+});
+await test('campaign: a test send goes only to the owner and carries unsubscribe + address', async () => {
+  const before = sent.length;
+  const r = await arav('POST', 'admin/campaign', { subject: 'Hello!', message: 'New gifts added.\nCheck them out.', testOnly: true });
+  assert.equal(r.status, 200); assert.equal(r.body.sent, 1);
+  const m = sent[sent.length - 1]; assert.equal(sent.length, before + 1); assert.equal(m.to, 'arav@example.com');
+  assert.match(m.text, /Unsubscribe: https:\/\/giftbloom\.test\/\?unsubscribe=[a-f0-9]{32}/); assert.match(m.text, /1 Example St, Springfield/);
+  assert.match(m.headers['List-Unsubscribe'], /unsubscribe=/);
+});
+await test('campaign: goes to opted-in people only, never to everyone', async () => {
+  const before = sent.length;
+  const r = await arav('POST', 'admin/campaign', { subject: 'Big news', message: 'Hi all' });
+  assert.equal(r.body.total, 2); assert.equal(r.body.sent, 2);
+  const to = sent.slice(before).map(m => m.to).sort();
+  assert.deepEqual(to, ['sam@example.com', 'yes@example.com']);
+});
+await test('campaign: refuses without subject/message or without a mailing address', async () => {
+  assert.equal((await arav('POST', 'admin/campaign', { subject: '', message: 'x' })).status, 400);
+  const noAddr = createApi({ store, mailer, env: { ADMIN_EMAILS: 'arav@example.com' } });
+  const c = client(); const login = await noAddr.handle(new Request('https://site.test/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'arav@example.com', password: 'secret1' }) }));
+  const cookie = login.headers.get('set-cookie').split(';')[0];
+  const res = await noAddr.handle(new Request('https://site.test/api/admin/campaign', { method: 'POST', headers: { 'content-type': 'application/json', cookie }, body: JSON.stringify({ subject: 's', message: 'm' }) }));
+  assert.equal(res.status, 400); assert.match((await res.json()).error, /MAIL_ADDRESS/);
+});
+await test('unsubscribe link works without logging in, and stops future sends', async () => {
+  const m = sent.filter(x => x.to === 'yes@example.com' && x.text.includes('Unsubscribe:')).pop();
+  const token = m.text.match(/unsubscribe=([a-f0-9]+)/)[1];
+  assert.equal((await anon('POST', 'unsubscribe', { token: 'nope' })).status, 404);
+  assert.equal((await anon('POST', 'unsubscribe', { token })).status, 200);
+  const before = sent.length;
+  const r = await arav('POST', 'admin/campaign', { subject: 'Again', message: 'x' });
+  assert.equal(r.body.total, 1); assert.ok(!sent.slice(before).some(x => x.to === 'yes@example.com'));
+});
+await test('emails escape names (no HTML injection)', async () => {
+  const before = sent.length;
+  await client()('POST', 'auth/signup', { name: '<b>Hax</b>', email: 'hax@example.com', password: '1234' });
+  await new Promise(r => setTimeout(r, 20));
+  const m = sent.slice(before).find(x => x.to === 'hax@example.com'); assert.ok(!m.html.includes('<b>Hax</b>')); assert.ok(m.html.includes('&lt;b&gt;Hax'));
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ', SOME FAILED' : ''}`);

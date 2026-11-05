@@ -16,6 +16,22 @@ export const BalloonLogo = ({ size = 30 }) => (
   </svg>
 );
 
+export const BloomLogo = ({ size = 30 }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+    <defs>
+      <linearGradient id="bloom-g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#a5b4fc" />
+        <stop offset="1" stopColor="#5eead4" />
+      </linearGradient>
+    </defs>
+    {[0, 72, 144, 216, 288].map(a => (
+      <ellipse key={a} cx="32" cy="18" rx="9" ry="15" fill="url(#bloom-g)" opacity="0.92" transform={`rotate(${a} 32 32)`} />
+    ))}
+    <circle cx="32" cy="32" r="8" fill="#0f172a" />
+    <circle cx="32" cy="32" r="4" fill="#e0e7ff" />
+  </svg>
+);
+
 export const TreeLogo = ({ size = 30 }) => (
   <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
     <path d="M32 6l-3 8h6z" fill="#fbbf24" />
@@ -32,6 +48,9 @@ export const TreeLogo = ({ size = 30 }) => (
 );
 
 const logoSvgString = (kind) => {
+  if (kind === 'classic') {
+    return "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g fill='%238b9cf7'><ellipse cx='32' cy='18' rx='9' ry='15'/><ellipse cx='32' cy='18' rx='9' ry='15' transform='rotate(72 32 32)'/><ellipse cx='32' cy='18' rx='9' ry='15' transform='rotate(144 32 32)'/><ellipse cx='32' cy='18' rx='9' ry='15' transform='rotate(216 32 32)'/><ellipse cx='32' cy='18' rx='9' ry='15' transform='rotate(288 32 32)'/></g><circle cx='32' cy='32' r='8' fill='%230f172a'/><circle cx='32' cy='32' r='4' fill='%23e0e7ff'/></svg>";
+  }
   if (kind === 'birthday') {
     return "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23fff3b0'/><stop offset='.5' stop-color='%23e6b422'/><stop offset='1' stop-color='%23b8860b'/></linearGradient></defs><path d='M32 4C19 4 11 14 11 25c0 12 11 22 21 26 10-4 21-14 21-26C53 14 45 4 32 4z' fill='url(%23g)'/><path d='M28 51l4-4 4 4z' fill='%23b8860b'/></svg>";
   }
@@ -39,10 +58,37 @@ const logoSvgString = (kind) => {
 };
 
 export const THEMES = {
+  classic: {
+    id: 'classic',
+    name: 'Classic',
+    emoji: '🎁',
+    blurb: 'Calm and simple, no holiday theme',
+    Logo: BloomLogo,
+    favicon: `data:image/svg+xml,${logoSvgString('classic')}`,
+    pageTitle: 'GiftBloom | Wishlists made easy',
+    headerTitle: (owner) => (owner ? `${owner}'s Wishlist Quiz` : 'My Wishlist Quiz'),
+    badge: '✨ Wishlist',
+    matcher: 'GIFT MATCH ENGINE',
+    bundleTitle: (n) => `Curated ${n}-Item Gift Bundle!`,
+    soloTitle: 'Your Top Matched Gift!',
+    galleryTitle: (owner) => `${owner ? `${owner}'s` : 'My'} Full Wishlist 🎁`,
+    adminTitle: 'Wishlist Admin 🛠️',
+    secretGifter: 'Secret Gifter',
+    claimerPlaceholder: 'e.g. Aunt Sarah or Cousin Leo',
+    messageLabel: 'Optional Note / Message',
+    messagePlaceholder: 'e.g. Got this for you!',
+    closeDesc: 'Looking for a top wishlist item or the big main gift!',
+    bestFitTitle: '🔮 The Perfect Pick (Best overall match)',
+    quizEmoji: '✨',
+    footer: 'Wishlist Quiz',
+    description: 'Take the quiz to find the perfect gift from a personalized wishlist, matched to your budget and vibe.',
+    particles: 'none'
+  },
   christmas: {
     id: 'christmas',
     name: 'Christmas',
     emoji: '🎄',
+    blurb: 'Red & green, snowfall',
     Logo: TreeLogo,
     favicon: `data:image/svg+xml,${logoSvgString('christmas')}`,
     pageTitle: "Santa's Wishlist Matcher | Personalized Christmas Quiz",
@@ -68,6 +114,7 @@ export const THEMES = {
     id: 'birthday',
     name: 'Birthday',
     emoji: '🎂',
+    blurb: 'White marble, gold, sparkles',
     Logo: BalloonLogo,
     favicon: `data:image/svg+xml,${logoSvgString('birthday')}`,
     pageTitle: 'Birthday Wishlist Matcher | Personalized Gift Quiz',
@@ -91,5 +138,5 @@ export const THEMES = {
   }
 };
 
-export const ThemeContext = createContext(THEMES.christmas);
+export const ThemeContext = createContext(THEMES.classic);
 export const useTheme = () => useContext(ThemeContext);
