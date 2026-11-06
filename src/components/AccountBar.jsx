@@ -30,6 +30,7 @@ export default function AccountBar({ user, tab, sharedCount, authMode, onTab, on
         {user && (
           <nav className="accountbar-tabs" style={{ display: 'flex', gap: '4px', marginLeft: '10px' }}>
             {tabBtn('mine', '🎁 My Wishlist', '🎁 Mine')}
+            {tabBtn('catalog', '🛍️ Catalog', '🛍️')}
             {tabBtn('shared', `👥 Shared with me${sharedCount ? ` (${sharedCount})` : ''}`, `👥${sharedCount ? ` ${sharedCount}` : ''}`)}
           </nav>
         )}

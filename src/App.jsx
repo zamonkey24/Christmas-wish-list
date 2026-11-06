@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AccountBar from './components/AccountBar';
 import AccountPage from './components/AccountPage';
+import BloomAI from './components/BloomAI';
+import CatalogPage from './components/CatalogPage';
 import AuthScreen from './components/AuthScreen';
 import InviteLanding from './components/InviteLanding';
 import LandingPage from './components/LandingPage';
 import SharedWithMe from './components/SharedWithMe';
 import Snowfall from './components/Snowfall';
 import { Notice, Spinner } from './components/ui';
+import { Sparkles } from 'lucide-react';
 import ListView from './ListView';
 import { THEMES, ThemeContext } from './ThemeContext';
 import { api } from './api';
@@ -31,6 +34,7 @@ export default function App() {
   const [resetToken, setResetToken] = useState(null);
   const [message, setMessage] = useState(null); // a simple full-page message, e.g. after unsubscribing
   const [notice, setNotice] = useState('');
+  const [bloomOpen, setBloomOpen] = useState(false);
 
   // The home page and account screens use the calm Classic look; an open wishlist uses its own theme.
   // ?theme=birthday|christmas|classic previews a look on this device only.
@@ -131,6 +135,8 @@ export default function App() {
 
   const signOut = async () => {
     try { await api('POST', 'auth/logout', {}); } catch { /* ignore */ }
+    setBloomOpen(false);
+    try { sessionStorage.removeItem('giftbloom_bloom_chat'); } catch { /* storage unavailable */ }
     setMe(null);
     setOpen(null);
     setInvite(null);
@@ -167,6 +173,12 @@ export default function App() {
           </div>
         )}
         {children}
+        {me && !bloomOpen && (
+          <button onClick={() => setBloomOpen(true)} aria-label="Open Bloom AI" className="festive-btn-primary" style={{ position: 'fixed', right: '18px', bottom: '18px', zIndex: 120, padding: '12px 18px', borderRadius: '9999px', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
+            <Sparkles style={{ width: '17px', height: '17px' }} /> Bloom AI
+          </button>
+        )}
+        {me && <BloomAI open={bloomOpen} onClose={() => setBloomOpen(false)} listId={me.myListId} />}
       </div>
     </ThemeContext.Provider>
   );
@@ -225,6 +237,7 @@ export default function App() {
 
   // ----- logged in
   if (open) return shell(<ListView key={open.listId} listId={open.listId} code={open.code} onTheme={changeTheme} />);
+  if (tab === 'catalog') return shell(<CatalogPage listId={me.myListId} onOpenBloom={() => setBloomOpen(true)} />);
   if (tab === 'shared') {
     return shell(
       <main style={{ flex: 1, position: 'relative', zIndex: 10 }}>

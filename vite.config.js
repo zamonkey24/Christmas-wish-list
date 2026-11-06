@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createApi } from './netlify/lib/api.mjs'
 import { createMailer } from './netlify/lib/mailer.mjs'
+import { makeClient } from './netlify/lib/bloom.mjs'
 import { createFileStore } from './tools/dev/file-store.mjs'
 
 const escapeHtml = (s = '') => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
@@ -27,7 +28,8 @@ function localApi() {
         console.log(`\n[local email] to ${mail.to}: ${mail.subject}`)
       }
       const env = { ADMIN_EMAILS: process.env.ADMIN_EMAILS || '*', MAIL_ADDRESS: process.env.MAIL_ADDRESS || '123 Example Street, Your City (local test)' }
-      const api = createApi({ store, legacyStore, env, mailer: createMailer({ outbox }) })
+      // Bloom AI uses its built-in matcher locally unless you start the server with ANTHROPIC_API_KEY=... npm run dev
+      const api = createApi({ store, legacyStore, env: { ...env, BLOOM_MODEL: process.env.BLOOM_MODEL }, mailer: createMailer({ outbox }), bloomClient: makeClient(process.env) })
 
       server.middlewares.use('/__outbox', (req, res) => {
         const mails = readOutbox()

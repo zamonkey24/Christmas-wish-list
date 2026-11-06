@@ -1,0 +1,381 @@
+[
+ {
+  "id": "az_B07PMSZFZ2",
+  "title": "Giant Inflatable Yellow Duck (Fun Express)",
+  "price": 22,
+  "image": "/products/duck.jpg",
+  "url": "https://www.amazon.com/Fun-Express-Inflatable-Inflates-Characters/dp/B07PMSZFZ2/",
+  "site": "amazon.com",
+  "category": "Fun & games",
+  "tags": [
+   "fun"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B004LLIKVU",
+  "title": "Amazon Shopping Gift Card ($50)",
+  "price": 50,
+  "image": "/products/giftcard.jpg",
+  "url": "https://www.amazon.com/dp/B004LLIKVU",
+  "site": "amazon.com",
+  "category": "Gift cards",
+  "tags": [
+   "giftcard",
+   "practical"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0H6R9W7LX",
+  "title": "BASED Body Lotion with Ceramides - Amber Scent",
+  "price": 25,
+  "image": "/products/lotion.jpg",
+  "url": "https://www.amazon.com/dp/B0H6R9W7LX",
+  "site": "amazon.com",
+  "category": "Skincare & body",
+  "tags": [
+   "skin",
+   "practical"
+  ],
+  "starter": true
+ },
+ {
+  "id": "p_26207ee890b8",
+  "title": "Mini FPV Drone with HD Camera & First-Person View Kit",
+  "price": 159,
+  "image": "/products/drone.jpg",
+  "url": "https://www.amazon.com/gp/aw/d/B09L16T7GF",
+  "site": "amazon.com",
+  "category": "Bikes & outdoors",
+  "tags": [
+   "tech",
+   "fun",
+   "outdoors",
+   "luxury"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0F4CNR73R",
+  "title": "Wireless Rechargeable LED Strobe Collision Lights for Bike / Motorcycle",
+  "price": 14,
+  "image": "/products/strobe.jpg",
+  "url": "https://www.amazon.com/Upgraded-Wireless-Rechargeable-Collision-Motorcycle/dp/B0F4CNR73R/",
+  "site": "amazon.com",
+  "category": "Bikes & outdoors",
+  "tags": [
+   "outdoors",
+   "tech"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B07QLLCWGH",
+  "title": "BORUIZHEN Aluminium Lightweight Mountain Bike Pedals (Anti-Skid)",
+  "price": 17,
+  "image": "/products/pedals.jpg",
+  "url": "https://www.amazon.com/BORUIZHEN-Aluminium-Lightweight-Mountain-Anti-Skid/dp/B07QLLCWGH/",
+  "site": "amazon.com",
+  "category": "Bikes & outdoors",
+  "tags": [
+   "outdoors"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0GF4QKYRV",
+  "title": "BASED Curl Gel (Definition & Scrunches)",
+  "price": 20,
+  "image": "/products/gel.jpg",
+  "url": "https://www.amazon.com/BASED-Curl-Gel-Definition-Scrunches/dp/B0GF4QKYRV",
+  "site": "amazon.com",
+  "category": "Hair care",
+  "tags": [
+   "hair"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0GF3ST2CQ",
+  "title": "BASED Curl Mousse (Definition & Lightweight Hold)",
+  "price": 18,
+  "image": "/products/mousse.jpg",
+  "url": "https://www.amazon.com/BASED-Curl-Mousse-Definition-Lightweight/dp/B0GF3ST2CQ",
+  "site": "amazon.com",
+  "category": "Hair care",
+  "tags": [
+   "hair"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0FCW6W4PY",
+  "title": "BASED Daily Skincare Duo (Purifying Face Wash + Restoring Moisturizer)",
+  "price": 36,
+  "image": "/products/based_moisturizer.jpg",
+  "url": "https://www.amazon.com/dp/B0FCW6W4PY",
+  "site": "amazon.com",
+  "category": "Skincare & body",
+  "tags": [
+   "skin",
+   "practical"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0DPY6WBB1",
+  "title": "BASED Performance Body Wash - Coconut Scent (16 fl oz)",
+  "price": 30,
+  "image": "/products/based_bodywash.jpg",
+  "url": "https://www.amazon.com/dp/B0DPY6WBB1",
+  "site": "amazon.com",
+  "category": "Skincare & body",
+  "tags": [
+   "skin",
+   "practical"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0DTXR6NSB",
+  "title": "BASED Curl Cream (Medium Hold, 8.5 oz)",
+  "price": 18,
+  "image": "/products/based_curlcream.jpg",
+  "url": "https://www.amazon.com/dp/B0DTXR6NSB",
+  "site": "amazon.com",
+  "category": "Hair care",
+  "tags": [
+   "hair"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0G6GCFJ52",
+  "title": "BASED Hair Elixir (Weightless Shine Serum)",
+  "price": 25,
+  "image": "/products/based_hair_elixir.jpg",
+  "url": "https://www.amazon.com/dp/B0G6GCFJ52",
+  "site": "amazon.com",
+  "category": "Hair care",
+  "tags": [
+   "hair"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0GNDF7K7T",
+  "title": "BASED Under Eye Elixir (0.5 fl oz)",
+  "price": 28,
+  "image": "/products/based_undereye.jpg",
+  "url": "https://www.amazon.com/dp/B0GNDF7K7T",
+  "site": "amazon.com",
+  "category": "Skincare & body",
+  "tags": [
+   "skin"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0DSYV8LVQ",
+  "title": "BASED Performance Deodorant - Bergamot Vanilla",
+  "price": 18,
+  "image": "/products/based_deodorant.jpg",
+  "url": "https://www.amazon.com/dp/B0DSYV8LVQ",
+  "site": "amazon.com",
+  "category": "Everyday",
+  "tags": [
+   "practical"
+  ],
+  "starter": true
+ },
+ {
+  "id": "p_2befb0d59635",
+  "title": "BASED Multi-Active Skin Elixir",
+  "price": 40,
+  "image": "/products/based_skin_elixir.jpg",
+  "url": "https://based.com/products/skin-elixir",
+  "site": "based.com",
+  "category": "Skincare & body",
+  "tags": [
+   "skin",
+   "luxury"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B07TK11FQN",
+  "title": "Jean Paul Gaultier Le Beau Eau de Toilette (2.5 oz)",
+  "price": 110,
+  "image": "/products/cologne.jpg",
+  "url": "https://www.amazon.com/dp/B07TK11FQN?psc=1",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance",
+   "luxury"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0BTPBZD1M",
+  "title": "Lattafa Maahir Legacy Eau de Parfum (3.4 oz)",
+  "price": 27,
+  "image": "/products/cologne_lattafa.jpg",
+  "url": "https://www.amazon.com/dp/B0BTPBZD1M?th=1",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance",
+   "luxury"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B079C2P64T",
+  "title": "Cremo Cologne - Spice & Black Vanilla (3.4 fl oz)",
+  "price": 21,
+  "image": "/products/cologne_cremo.jpg",
+  "url": "https://www.amazon.com/dp/B079C2P64T?th=1",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0DBRGYTDB",
+  "title": "Armani Beauty Stronger With You Intensely Eau de Parfum (1.7 fl oz)",
+  "price": 89,
+  "image": "/products/cologne_armani.jpg",
+  "url": "https://www.amazon.com/dp/B0DBRGYTDB?th=1",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance",
+   "luxury"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0743HLFH5",
+  "title": "Jean Paul Gaultier Le Male Eau de Toilette (2.5 oz)",
+  "price": 105,
+  "image": "/products/cologne_lemale.jpg",
+  "url": "https://www.amazon.com/dp/B0743HLFH5",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance",
+   "luxury"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B000RO0NOW",
+  "title": "Dior Sauvage Eau de Toilette (3.4 oz)",
+  "price": 131,
+  "image": "/products/cologne_sauvage.jpg",
+  "url": "https://www.amazon.com/dp/B000RO0NOW?th=1",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance",
+   "luxury"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B01JG5V0E4",
+  "title": "Versace Pour Homme Dylan Blue Eau de Toilette (3.4 oz)",
+  "price": 56,
+  "image": "/products/cologne_dylanblue.jpg",
+  "url": "https://www.amazon.com/dp/B01JG5V0E4?th=1",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0G5B5GD4T",
+  "title": "Azzaro The Most Wanted Cologne Discovery Set (3-Piece)",
+  "price": 43,
+  "image": "/products/cologne_azzaro_set.jpg",
+  "url": "https://www.amazon.com/dp/B0G5B5GD4T?th=1",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0B8TQ7YRW",
+  "title": "Lattafa Asad Eau de Parfum (3.4 oz)",
+  "price": 27,
+  "image": "/products/cologne_asad.jpg",
+  "url": "https://www.amazon.com/dp/B0B8TQ7YRW?th=1",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0B92Y18GT",
+  "title": "Lattafa Khamrah Eau de Parfum (3.4 oz)",
+  "price": 35,
+  "image": "/products/cologne_khamrah.jpg",
+  "url": "https://www.amazon.com/dp/B0B92Y18GT?th=1",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B07XFSH553",
+  "title": "Armaf Club de Nuit Intense Man Eau de Toilette (3.6 oz)",
+  "price": 31,
+  "image": "/products/cologne_cdnintense.jpg",
+  "url": "https://www.amazon.com/dp/B07XFSH553?th=1",
+  "site": "amazon.com",
+  "category": "Fragrance",
+  "tags": [
+   "fragrance"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0DPNKSQ9C",
+  "title": "Supergoop! Unseen Sunscreen SPF 50 (0.68 fl oz mini)",
+  "price": 19,
+  "image": "/products/sunscreen_mini.jpg",
+  "url": "https://www.amazon.com/dp/B0DPNKSQ9C?th=1",
+  "site": "amazon.com",
+  "category": "Skincare & body",
+  "tags": [
+   "skin",
+   "practical"
+  ],
+  "starter": true
+ },
+ {
+  "id": "az_B0H4FWYHYL",
+  "title": "Ulta Beauty Gift Card ($25)",
+  "price": 25,
+  "image": "/products/giftcard_ulta.jpg",
+  "url": "https://www.amazon.com/dp/B0H4FWYHYL?th=1",
+  "site": "amazon.com",
+  "category": "Gift cards",
+  "tags": [
+   "giftcard"
+  ],
+  "starter": true
+ }
+]

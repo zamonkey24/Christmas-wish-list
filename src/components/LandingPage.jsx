@@ -1,9 +1,11 @@
 import React from 'react';
-import { Link2, Sparkles, Share2, Users, Gift, Palette, Smartphone, Lock, ArrowRight, Plus } from 'lucide-react';
+import { Link2, Sparkles, Share2, Users, Gift, Palette, Smartphone, Lock, ArrowRight, Plus, Search, Bot } from 'lucide-react';
 import { THEMES } from '../ThemeContext';
 
 const FEATURES = [
   { icon: Link2, title: 'Add gifts from a link', text: 'Paste a link to anything you want. GiftBloom finds the name, photo and price for you.' },
+  { icon: Search, title: 'A gift catalog', text: 'Search and scroll through gifts with their photo, price and link, then add any of them to your wishlist in one tap.' },
+  { icon: Bot, title: 'Bloom AI', text: 'Tell Bloom who the gift is for and your budget. It suggests real gifts from the catalog.' },
   { icon: Sparkles, title: 'A quiz that picks the gift', text: 'Five quick questions about budget and taste match friends and family to the right gift, never over budget.' },
   { icon: Share2, title: 'One invite link', text: 'Send a single link. It opens your wishlist, and it is saved to their account so they never need it again.' },
   { icon: Users, title: 'Shared with me', text: 'Every wishlist you are invited to lives in one tab, like “Arav’s wishlist”, with its own quiz and gifts.' },

@@ -1,4 +1,4 @@
-// Real-browser test of the home page, accounts, forgot password, emails, invite links, claims, add-by-link and the original-list import.
+// Real-browser test of the home page, accounts, forgot password, emails, invite links, claims, add-by-link, catalog, Bloom AI and the original-list import.
 // Setup: `npm run build`, then `node tools/test/e2e-server.mjs 4300 &`, then (in a folder with `npm i puppeteer-core`) run this file.
 // Needs a saved Amazon product page at /tmp/B0DBRGYTDB.html (see e2e-server.mjs FIXTURE). Screenshots go to /tmp/pp/.
 import puppeteer from 'puppeteer-core';
@@ -103,6 +103,35 @@ try {
   await S.reload(); await must(S, 'Your wishlist is empty'); await S.evaluate(() => [...document.querySelectorAll('div[style*="sticky"] button')].find(b => b.innerText.includes('Sam'))?.click()); await sleep(600);
   assert.equal(await S.$eval('input[type=checkbox]', e => e.checked), false); log("Sam's account page now shows updates are off");
   await ctxU.close();
+
+  // ---------- catalog: browse, search, endless scroll, add
+  const bar = 'div[style*="sticky"] button';
+  const cardCount = (p) => p.evaluate(() => [...document.querySelectorAll('button')].filter(b => /Add to my wishlist|Already on your list|^\s*Added/.test(b.innerText)).length);
+  await clickText(S, 'Catalog', bar); await must(S, 'Gift Catalog'); await must(S, 'gifts'); await sleep(800);
+  assert.equal(await cardCount(S), 24); log('catalog opens with the first 24 products');
+  await S.evaluate(() => window.scrollTo(0, document.body.scrollHeight)); await S.waitForFunction(() => [...document.querySelectorAll('button')].filter(b => /Add to my wishlist/.test(b.innerText)).length > 24, { timeout: 8000 }); log('scrolling to the bottom loads more products automatically (endless scroll)');
+  assert.ok((await cardCount(S)) >= 28);
+  await S.evaluate(() => window.scrollTo(0, 0));
+  await type(S, 'input[aria-label="Search the catalog"]', 'cologne'); await must(S, 'for “cologne”'); await sleep(600);
+  { const t = await text(S); assert.ok(t.includes('Cremo') && t.includes('Lattafa') && !t.includes('Giant Inflatable')); } log('searching "cologne" shows only matching products');
+  await S.select('select[aria-label="Price"]', '25'); await sleep(900);
+  { const t = await text(S); assert.ok(t.includes('Cremo') && !t.includes('Dior Sauvage')); } log('price filter "Under $25" works');
+  await shot(S, '08-catalog');
+  await clickText(S, 'Add to my wishlist'); await must(S, 'Added'); log('adding a product from the catalog');
+  await clickText(S, 'My Wishlist', bar); await must(S, 'All Gifts (1)'); log('it is on my wishlist right away');
+  await clickText(S, 'Catalog', bar); await must(S, 'Gift Catalog');
+
+  // ---------- Bloom AI
+  await S.click('button[aria-label="Open Bloom AI"]'); await must(S, "Hi, I'm Bloom AI"); await shot(S, '09-bloom-open');
+  await clickText(S, 'Cologne for my dad under $60'); await must(S, 'ideas'); await sleep(500);
+  { const t = await S.$eval('div[role="dialog"]', e => e.innerText); assert.match(t, /under \$60/); assert.ok(/\$\d+/.test(t)); } log('Bloom AI answers a gift request with real products and respects the budget');
+  const addedBefore = await S.evaluate(() => [...document.querySelectorAll('div[role="dialog"] button')].filter(b => b.innerText.includes('Add to my wishlist')).length); assert.ok(addedBefore >= 2);
+  await S.evaluate(() => [...document.querySelectorAll('div[role="dialog"] button')].find(b => b.innerText.includes('Add to my wishlist')).click()); await sleep(900);
+  assert.ok((await S.$eval('div[role="dialog"]', e => e.innerText)).includes('Added')); log('a suggestion can be added to the wishlist right from the chat');
+  await type(S, 'input[aria-label="Message Bloom AI"]', 'a yacht under $5'); await S.keyboard.press('Enter'); await must(S, "couldn't find"); log('when nothing fits, Bloom says so instead of making something up');
+  await shot(S, '10-bloom-chat');
+  await S.click('button[aria-label="Close Bloom AI"]'); await gone(S, "Hi, I'm Bloom AI").catch(() => {});
+  await clickText(S, 'My Wishlist', bar); await must(S, 'All Gifts (2)'); log('both added gifts are on the wishlist');
 
   // ---------- original wishlist import (Arav's real data) still works
   const ctxO = await browser.createBrowserContext(); const O = await ctxO.newPage(); O.on('pageerror', e => errs.push('O:' + e.message));

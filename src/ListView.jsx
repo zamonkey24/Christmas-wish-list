@@ -114,6 +114,22 @@ export default function ListView({ listId, code, onTheme }) {
     };
   }, [listId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Something else (the catalog, Bloom AI) added a gift: pick it up now instead of waiting for the next check.
+  useEffect(() => {
+    const refresh = () => load(false);
+    window.addEventListener('giftbloom:list-changed', refresh);
+    return () => window.removeEventListener('giftbloom:list-changed', refresh);
+  }, [listId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Leaving this screen (for example to the catalog) must not lose an edit that has not been saved yet.
+  useEffect(() => () => {
+    if (saveTimer.current && ready.current && latest.current.items) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+      api('PUT', `lists/${listId}`, JSON.parse(contentOf(latest.current))).catch(() => {});
+    }
+  }, [listId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Owner: save changes shortly after they are made.
   useEffect(() => {
     if (!ready.current || !isOwner) return;

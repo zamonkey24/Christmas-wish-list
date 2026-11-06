@@ -5,6 +5,8 @@ import { promisify } from 'node:util';
 import { fetchProduct } from './preview.mjs';
 import { createMailer } from './mailer.mjs';
 import { welcomeEmail, resetEmail, promoEmail } from './emails.mjs';
+import { starterCatalog, searchProducts, makeProduct, productIdOf } from './catalog.mjs';
+import { createBloom } from './bloom.mjs';
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -15,6 +17,8 @@ const MIN_PASSWORD = 4;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const RESET_MINUTES = 60;
 const MAX_CAMPAIGN = 300;
+const MAX_COMMUNITY = 2000;
+const BLOOM_PER_DAY = 40;
 const MAX_BODY = 1_000_000;
 const MAX_ITEMS = 300;
 const LEGACY_SETUP_CODE = '01015'; // the old owner password; lets the original wishlist be imported once
@@ -87,11 +91,35 @@ function cleanItems(arr, limit) {
   return out;
 }
 
-export function createApi({ store, legacyStore = null, fetchProductImpl = fetchProduct, now = () => Date.now(), mailer = createMailer(), env = {} }) {
+export function createApi({ store, legacyStore = null, fetchProductImpl = fetchProduct, now = () => Date.now(), mailer = createMailer(), env = {}, bloomClient = null }) {
   const adminEmails = String(env.ADMIN_EMAILS || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
   const isAdmin = (u) => Boolean(u && (adminEmails.includes(u.login) || adminEmails.includes('*'))); // '*' is for local testing only
   const siteUrlOf = (req) => (env.SITE_URL || new URL(req.url).origin).replace(/\/$/, '');
   const getJSON = (key) => store.get(key, { type: 'json' });
+
+  // ---------- catalog
+  // Products people add by link (our server read the page, so name/photo/price are real) join the shared catalog.
+  async function addToCommunity(info) {
+    const product = makeProduct(info);
+    if (!product) return;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const cur = await store.getWithMetadata('catalog/community', { type: 'json' });
+      const items = cur?.data?.items ? [...cur.data.items] : [];
+      const i = items.findIndex(p => p.id === product.id);
+      if (i >= 0) items[i] = { ...items[i], price: product.price, image: product.image, title: product.title };
+      else items.unshift(product);
+      const body = { items: items.slice(0, MAX_COMMUNITY) };
+      const res = cur ? await store.setJSON('catalog/community', body, { onlyIfMatch: cur.etag }) : await store.setJSON('catalog/community', body, { onlyIfNew: true });
+      if (res?.modified !== false) return;
+    }
+  }
+  async function allProducts() {
+    const community = (await getJSON('catalog/community'))?.items || [];
+    const starters = starterCatalog();
+    const seen = new Set(starters.map(p => p.id));
+    return [...starters, ...community.filter(p => !seen.has(p.id))];
+  }
+  const bloom = createBloom({ getCatalog: allProducts, client: bloomClient, model: env.BLOOM_MODEL || undefined });
 
   // ---------- passwords & sessions
   async function hashPassword(password, saltHex) {
@@ -531,10 +559,55 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
     const url = str(b.url, 2000);
     if (!url) throw new HttpError(400, 'Paste a product link first.');
     try {
-      return json(await fetchProductImpl(url));
+      const info = await fetchProductImpl(url);
+      addToCommunity(info).catch(() => {}); // sharing it with the catalog must never get in the way
+      return json(info);
     } catch (e) {
       throw new HttpError(422, e.message || 'Could not read that link.');
     }
+  }
+
+  async function catalogSearch(req) {
+    await requireUser(req);
+    const q = new URL(req.url).searchParams;
+    const num = (k, d) => (q.get(k) !== null && q.get(k) !== '' && Number.isFinite(Number(q.get(k))) ? Number(q.get(k)) : d);
+    return json(searchProducts(await allProducts(), {
+      q: (q.get('q') || '').slice(0, 100),
+      category: q.get('category') || '',
+      min: num('min', 0),
+      max: num('max', Infinity),
+      sort: q.get('sort') || 'relevance',
+      page: num('page', 1),
+      limit: num('limit', 24)
+    }));
+  }
+
+  async function addListItem(req, listId) {
+    const { list } = await accessList(req, listId, { ownerOnly: true });
+    const b = await readBody(req);
+    const item = cleanItem({ ...b.item, id: b.item?.id || `g_${now()}` });
+    if (!item) throw new HttpError(400, 'That gift is missing a name or price.');
+    const key = (u) => (u ? productIdOf(u) : null);
+    const dupe = list.items.find(i => i.id === item.id || (item.url && key(i.url) === key(item.url)));
+    if (dupe) return json({ added: false, count: list.items.length });
+    if (list.items.length >= MAX_ITEMS) throw new HttpError(400, 'Your wishlist is full.');
+    const fresh = await getJSON(`lists/${listId}`);
+    fresh.items = [item, ...fresh.items];
+    fresh.updatedAt = Math.max(now(), (fresh.updatedAt || 0) + 1);
+    await store.setJSON(`lists/${listId}`, fresh);
+    return json({ added: true, count: fresh.items.length, updatedAt: fresh.updatedAt });
+  }
+
+  async function bloomChat(req) {
+    const user = await requireUser(req);
+    const b = await readBody(req);
+    const messages = (Array.isArray(b.messages) ? b.messages : [])
+      .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
+      .map(m => ({ role: m.role, content: m.content.trim().slice(0, 800) }))
+      .slice(-12);
+    if (!messages.length || messages[messages.length - 1].role !== 'user') throw new HttpError(400, 'Tell Bloom what you are looking for.');
+    await hit(`bloom/${user.id}`, BLOOM_PER_DAY, 24 * 3600000);
+    return json(await bloom.answer(messages));
   }
 
   async function legacyAvailable(req) {
@@ -608,12 +681,15 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
       if (path === 'join' && m === 'POST') return await join(req);
       if (path === 'leave' && m === 'POST') return await leave(req);
       if (path === 'preview' && m === 'POST') return await preview(req);
+      if (path === 'catalog' && m === 'GET') return await catalogSearch(req);
+      if (path === 'bloom' && m === 'POST') return await bloomChat(req);
       if (path === 'legacy' && m === 'GET') return await legacyAvailable(req);
       if (path === 'import-legacy' && m === 'POST') return await importLegacy(req);
       if (seg[0] === 'lists' && seg.length >= 2) {
         const id = seg[1];
         if (seg.length === 2 && m === 'GET') return await getList(req, id);
         if (seg.length === 2 && m === 'PUT') return await putList(req, id);
+        if (seg[2] === 'items' && m === 'POST') return await addListItem(req, id);
         if (seg[2] === 'claim' && m === 'POST') return await claim(req, id);
         if (seg[2] === 'unclaim' && m === 'POST') return await unclaim(req, id);
         if (seg[2] === 'reset-claims' && m === 'POST') return await resetClaims(req, id);
