@@ -10,17 +10,20 @@ export default function ProductCard({ product, listId, compact = false }) {
     try { setState((await addProductToWishlist(listId, product)) ? 'added' : 'already'); } catch { setState('error'); }
   };
   const done = state === 'added' || state === 'already';
+  const idea = product.estimated === true;
+  const price = `${idea ? '~' : ''}$${product.price}`;
   const label = { idle: 'Add to my wishlist', adding: 'Adding…', added: 'Added', already: 'Already on your list', error: 'Try again' }[state];
 
   return (
     <div className="glass-card" style={{ display: 'flex', flexDirection: compact ? 'row' : 'column', overflow: 'hidden', gap: compact ? '12px' : 0, padding: compact ? '10px' : 0 }}>
       <div style={{ position: 'relative', flexShrink: 0, width: compact ? '84px' : '100%', height: compact ? '84px' : '170px', background: '#fff', borderRadius: compact ? '10px' : 0, overflow: 'hidden' }}>
-        <img src={product.image} alt={product.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
-        {!compact && <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-color)', padding: '3px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '0.9rem' }}>${product.price}</div>}
+        <img src={product.image} alt={product.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: idea ? 'cover' : 'contain' }} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+        {!compact && <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-color)', padding: '3px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '0.9rem' }}>{price}</div>}
+        {!compact && idea && <div title="A gift idea: the price is an estimate and the link searches Amazon" style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(15,23,42,0.85)', color: '#fbbf24', padding: '3px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '0.7rem' }}>💡 Idea</div>}
       </div>
       <div style={{ padding: compact ? 0 : '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: 0 }}>
         <div>
-          <div style={{ fontSize: '0.7rem', color: '#a5b4fc', fontWeight: 700, textTransform: 'uppercase' }}>{product.category}{compact ? ` · $${product.price}` : ''}</div>
+          <div style={{ fontSize: '0.7rem', color: '#a5b4fc', fontWeight: 700, textTransform: 'uppercase' }}>{product.category}{compact ? ` · ${price}` : ''}{compact && idea ? ' · idea' : ''}</div>
           <div style={{ fontWeight: 700, color: '#f8fafc', fontSize: compact ? '0.88rem' : '0.98rem', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.title}</div>
         </div>
         <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', flexWrap: 'wrap' }}>
@@ -28,7 +31,7 @@ export default function ProductCard({ product, listId, compact = false }) {
             {done ? <Check style={{ width: '14px', height: '14px' }} /> : <Plus style={{ width: '14px', height: '14px' }} />} {label}
           </button>
           <a href={product.url} target="_blank" rel="noopener noreferrer" className="festive-btn-secondary" style={{ padding: compact ? '6px 10px' : '8px 12px', fontSize: '0.8rem', textDecoration: 'none' }} title={`View on ${product.site || 'the store'}`}>
-            <ExternalLink style={{ width: '14px', height: '14px' }} /> View
+            <ExternalLink style={{ width: '14px', height: '14px' }} /> {idea ? 'Find on Amazon' : 'View'}
           </a>
         </div>
       </div>

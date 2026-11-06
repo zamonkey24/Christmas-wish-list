@@ -129,7 +129,7 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
               </div>
 
               <div style={{ position: 'absolute', top: '12px', right: '12px', background: '#e11d48', color: '#fff', padding: '4px 12px', borderRadius: '8px', fontSize: '1rem', fontWeight: 800, boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
-                ${item.price}
+                {item.estimated ? '~' : ''}${item.price}
               </div>
 
               <div style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -230,7 +230,7 @@ export default function QuizResult({ quizAnswers, wishlistItems, onClaimItem, on
                     {item.title}
                   </h4>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                    <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: '0.85rem' }}>${item.price}</span>
+                    <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: '0.85rem' }}>{item.estimated ? '~' : ''}${item.price}</span>
                     <span style={{ color: '#64748b', fontSize: '0.75rem' }}>• {item.category}</span>
                   </div>
                 </div>

@@ -1,0 +1,276 @@
+# name|estimated price (USD)|category|extra age groups (K kids 6-9, W tweens 10-12, T teens 13-17, Y young adults 18-25, A adults 26-49, S 50+) - the file's own group is always included
+Nintendo Switch 2 console|449|Gaming|WY
+Nintendo Switch OLED Model console|349|Gaming|WY
+Nintendo Switch Lite|199|Gaming|KWY
+PlayStation 5 console Digital Edition|449|Gaming|WY
+Xbox Series S console|299|Gaming|WY
+Xbox Series X console|499|Gaming|Y
+Meta Quest 3S VR headset|299|Gaming|WY
+Steam Deck OLED handheld|549|Gaming|Y
+PlayStation DualSense wireless controller|75|Gaming|WY
+Xbox Wireless Controller|65|Gaming|WY
+Nintendo Switch Pro Controller|70|Gaming|WY
+8BitDo Pro 2 Bluetooth controller|50|Gaming|Y
+HyperX Cloud II gaming headset|80|Gaming|WY
+SteelSeries Arctis Nova 1 gaming headset|100|Gaming|Y
+Logitech G502 gaming mouse|50|Gaming|Y
+Razer DeathAdder V3 gaming mouse|70|Gaming|Y
+Logitech G Pro X Superlight 2 mouse|160|Gaming|Y
+Redragon K552 mechanical gaming keyboard|40|Gaming|WY
+Elgato Stream Deck MK.2|150|Gaming|Y
+Blue Yeti USB microphone|100|Audio|Y
+Extended RGB gaming mouse pad XL|20|Gaming|WY
+Secretlab TITAN Evo gaming chair|500|Gaming|Y
+Homall ergonomic gaming chair|120|Gaming|WY
+Govee RGBIC LED strip lights 50 ft|30|Room & decor|WY
+Mario Kart World for Nintendo Switch 2|80|Gaming|WY
+The Legend of Zelda: Tears of the Kingdom|60|Gaming|WY
+Pokémon Scarlet for Nintendo Switch|60|Gaming|KWY
+Super Smash Bros. Ultimate|60|Gaming|WY
+Animal Crossing: New Horizons|60|Gaming|KWY
+Minecraft for Nintendo Switch|30|Gaming|KWY
+Overcooked! All You Can Eat|40|Gaming|WY
+Stardew Valley for Switch|15|Gaming|WYA
+Nintendo eShop gift card $50|50|Gift cards|WY
+PlayStation Store gift card $50|50|Gift cards|WY
+Xbox gift card $50|50|Gift cards|WY
+Roblox gift card $25|25|Gift cards|KW
+Fortnite V-Bucks gift card|25|Gift cards|W
+Steam gift card $20|20|Gift cards|WY
+Spotify gift card $30|30|Gift cards|WYA
+Netflix gift card $25|25|Gift cards|WYAS
+Apple gift card $25|25|Gift cards|WYAS
+Google Play gift card $25|25|Gift cards|WYA
+Starbucks gift card $25|25|Gift cards|WYAS
+Sephora gift card $50|50|Gift cards|WYA
+Amazon gift card $25|25|Gift cards|WYAS
+Apple AirPods 4|129|Audio|WYA
+Apple AirPods Pro 2|249|Audio|YA
+Samsung Galaxy Buds FE|100|Audio|WY
+Sony WH-1000XM5 noise-cancelling headphones|350|Audio|YA
+Beats Solo 4 wireless headphones|180|Audio|WY
+JBL Flip 6 portable Bluetooth speaker|130|Audio|WYA
+JBL Go 4 mini speaker|50|Audio|KWY
+Bose SoundLink Flex speaker|150|Audio|YA
+Anker Soundcore 3 Bluetooth speaker|50|Audio|WY
+Apple Watch SE|249|Tech & gadgets|WYA
+Fitbit Charge 6 fitness tracker|160|Tech & gadgets|YA
+Apple iPad 11-inch|349|Tech & gadgets|WYA
+Amazon Fire HD 10 tablet|140|Tech & gadgets|WYS
+Kindle Paperwhite|160|Tech & gadgets|WYAS
+Kindle (base model)|110|Tech & gadgets|WYAS
+Anker 20,000mAh portable power bank|45|Tech & gadgets|WYA
+Apple MagSafe charger|39|Tech & gadgets|WYA
+Apple AirTag 4-pack|80|Tech & gadgets|YA
+Fujifilm Instax Mini 12 instant camera|80|Tech & gadgets|WY
+Polaroid Now Gen 2 instant camera|120|Tech & gadgets|WY
+Instax Mini film 40-pack|35|Tech & gadgets|WY
+GoPro HERO action camera|250|Tech & gadgets|WYA
+DJI Mini 4K drone|300|Tech & gadgets|YA
+Ring light with phone tripod|30|Tech & gadgets|WY
+Bluetooth phone tripod with remote|25|Tech & gadgets|WYA
+Logitech MX Master 3S wireless mouse|100|Tech & gadgets|YA
+Keychron K2 wireless mechanical keyboard|90|Tech & gadgets|YA
+Rain Design mStand laptop stand|45|School & desk|YA
+Samsung T7 portable SSD 1TB|90|Tech & gadgets|YA
+SanDisk Extreme 128GB microSD card|20|Tech & gadgets|WYA
+Anker 7-in-1 USB-C hub|35|Tech & gadgets|YA
+Amazon Echo Dot (5th gen)|50|Tech & gadgets|WYAS
+Amazon Echo Pop|40|Tech & gadgets|WYAS
+Casio G-Shock DW-5600 watch|60|Fashion & shoes|WYA
+Casio F-91W classic digital watch|20|Fashion & shoes|WYA
+Spigen Tough Armor phone case|20|Tech & gadgets|WYA
+PopSockets PopGrip phone grip|12|Tech & gadgets|WYA
+Bambu Lab A1 mini 3D printer|249|Maker & STEM|YA
+Bambu Lab A1 3D printer|399|Maker & STEM|YA
+Creality Ender-3 V3 SE 3D printer|199|Maker & STEM|YA
+Elegoo Neptune 4 3D printer|199|Maker & STEM|YA
+Elegoo Mars 4 resin 3D printer|180|Maker & STEM|YA
+3Doodler Start 3D printing pen|50|Maker & STEM|KWY
+Hatchbox PLA 3D printer filament 1 kg|25|Maker & STEM|YA
+PLA filament 4-color bundle|35|Maker & STEM|YA
+3D printer tool kit|20|Maker & STEM|YA
+Raspberry Pi 5 starter kit|110|Maker & STEM|YA
+Arduino Starter Kit|100|Maker & STEM|WYA
+Elegoo UNO R3 super starter kit|45|Maker & STEM|WYA
+BBC micro:bit v2 Go kit|25|Maker & STEM|KWY
+Snap Circuits Classic electronics kit|35|Maker & STEM|KW
+Pinecil soldering iron|30|Maker & STEM|YA
+Digital multimeter|20|Maker & STEM|YA
+mBot coding robot kit|90|Maker & STEM|KW
+Sphero Mini robotic ball|50|Maker & STEM|KW
+Celestron AstroMaster 70AZ telescope|160|Maker & STEM|WYAS
+GAN speed cube 3x3|35|Games & puzzles|WY
+Rubik's Cube 3x3|10|Games & puzzles|KWY
+Nike Dunk Low sneakers|115|Fashion & shoes|WY
+Nike Air Force 1 '07 sneakers|115|Fashion & shoes|WYA
+Adidas Samba OG sneakers|100|Fashion & shoes|WYA
+Adidas Campus 00s sneakers|100|Fashion & shoes|WY
+New Balance 574 sneakers|90|Fashion & shoes|WYAS
+New Balance 550 sneakers|120|Fashion & shoes|WYA
+Converse Chuck Taylor All Star|65|Fashion & shoes|KWYA
+Vans Old Skool sneakers|70|Fashion & shoes|KWYA
+Crocs Classic Clog|50|Fashion & shoes|KWYAS
+Crocs Jibbitz charms 20-pack|15|Fashion & shoes|KWY
+UGG Tasman slippers|130|Fashion & shoes|YAS
+Nike Club Fleece hoodie|65|Fashion & shoes|WYA
+Nike Tech Fleece hoodie|130|Fashion & shoes|WYA
+Adidas Essentials hoodie|55|Fashion & shoes|WYA
+Champion Reverse Weave hoodie|65|Fashion & shoes|WYA
+Carhartt Acrylic Watch beanie|20|Fashion & shoes|WYAS
+Levi's 501 Original jeans|70|Fashion & shoes|YA
+Lululemon Everywhere Belt Bag|38|Travel & bags|WYA
+Lululemon Align leggings|98|Fashion & shoes|YA
+Ray-Ban Wayfarer sunglasses|160|Fashion & shoes|YA
+Hair claw clips set|10|Fashion & shoes|WY
+Silk scrunchies set|12|Fashion & shoes|KWY
+Gold hoop earrings|20|Fashion & shoes|WYA
+Pandora charm bracelet|65|Fashion & shoes|WYA
+Fjällräven Kånken backpack|90|Travel & bags|WYA
+JanSport SuperBreak backpack|40|Travel & bags|KWYA
+The North Face Borealis backpack|100|Travel & bags|WYA
+Nike Brasilia duffel bag|40|Travel & bags|WYA
+Stanley Quencher H2.0 40 oz tumbler|45|Home & kitchen|WYA
+Owala FreeSip 24 oz water bottle|28|Home & kitchen|KWYA
+Hydro Flask 32 oz bottle|45|Home & kitchen|WYA
+CeraVe Hydrating Facial Cleanser|16|Skincare & body|WYA
+CeraVe Moisturizing Cream|18|Skincare & body|WYA
+Cetaphil Gentle Skin Cleanser|14|Skincare & body|WYA
+The Ordinary Niacinamide 10% + Zinc 1%|10|Skincare & body|WYA
+Neutrogena Hydro Boost water gel|25|Skincare & body|WYA
+EltaMD UV Clear SPF 46 sunscreen|45|Skincare & body|YA
+Paula's Choice 2% BHA Liquid Exfoliant|35|Skincare & body|YA
+COSRX Snail Mucin 96% essence|25|Skincare & body|WYA
+Hero Cosmetics Mighty Patch pimple patches|13|Skincare & body|WYA
+Laneige Lip Sleeping Mask|24|Skincare & body|WYA
+Summer Fridays Lip Butter Balm|24|Skincare & body|WYA
+Burt's Bees lip balm 4-pack|9|Skincare & body|WYAS
+Sol de Janeiro Brazilian Bum Bum Cream|50|Skincare & body|YA
+Native deodorant|13|Skincare & body|WYA
+Lush bath bomb gift set|30|Skincare & body|WYA
+Bath & Body Works 3-wick candle|27|Room & decor|WYAS
+Victoria's Secret Bare Vanilla body mist|20|Fragrance|WYA
+Sol de Janeiro Cheirosa 62 perfume mist|28|Fragrance|WYA
+Ariana Grande Cloud eau de parfum|65|Fragrance|WYA
+Lattafa Yara eau de parfum|30|Fragrance|WYA
+Hollister Wave for Him cologne|35|Fragrance|WY
+Axe Dark Temptation body spray|7|Fragrance|WY
+Old Spice body spray|7|Fragrance|WYA
+e.l.f. Halo Glow liquid filter|14|Makeup|WYA
+e.l.f. Power Grip primer|10|Makeup|WYA
+Rare Beauty Soft Pinch liquid blush|23|Makeup|WYA
+Maybelline Sky High mascara|12|Makeup|WYA
+NYX Butter Gloss lip gloss|10|Makeup|WYA
+Fenty Beauty Gloss Bomb|22|Makeup|WYA
+Urban Decay All Nighter setting spray|35|Makeup|YA
+Revlon One-Step Hair Dryer and Volumizer|60|Hair care|WYA
+CHI Original ceramic flat iron|90|Hair care|YA
+Olaplex No.3 Hair Perfector|30|Hair care|YA
+Mielle Rosemary Mint scalp oil|10|Hair care|WYA
+Wet Brush detangler|10|Hair care|KWYA
+Satin pillowcase|15|Hair care|WYA
+Govee Glide LED wall light panels|120|Room & decor|Y
+Lava lamp 14.5 inch|30|Room & decor|KWYA
+LED neon sign wall decor|35|Room & decor|WY
+Sunset projection lamp|18|Room & decor|WY
+Galaxy star projector night light|35|Room & decor|KWY
+Photo clips with string lights|10|Room & decor|WYA
+Aesthetic wall tapestry|20|Room & decor|WY
+Squishmallows 16 inch plush|25|Toys & collectibles|KWY
+Big Joe Roma bean bag chair|90|Room & decor|KWY
+Cooluli mini fridge|60|Home & kitchen|WYA
+LED desk lamp with wireless charger|35|School & desk|WYA
+Weighted blanket 15 lb|50|Wellness|WYAS
+Yankee Candle large jar candle|28|Room & decor|WYAS
+Percy Jackson complete series box set|60|Books & manga|KW
+Harry Potter paperback box set|75|Books & manga|KWYA
+The Hunger Games trilogy box set|40|Books & manga|WY
+Fourth Wing by Rebecca Yarros|20|Books & manga|Y
+Heartstopper Volume 1|13|Books & manga|W
+One Piece manga Volume 1|10|Books & manga|WY
+Naruto manga Volume 1|10|Books & manga|WY
+My Hero Academia manga Volume 1|10|Books & manga|WY
+Demon Slayer manga Volume 1|10|Books & manga|WY
+Jujutsu Kaisen manga Volume 1|10|Books & manga|Y
+Attack on Titan manga Volume 1|11|Books & manga|Y
+Atomic Habits by James Clear|17|Books & manga|YAS
+Strathmore sketchbook 9x12|15|Music & art|KWYA
+Prismacolor Premier colored pencils 72|55|Music & art|WYA
+Ohuhu alcohol markers 60-set|45|Music & art|WY
+Wacom Intuos drawing tablet|80|Music & art|WYA
+Cricut Joy cutting machine|180|Music & art|YA
+Perler fuse beads 11,000 pieces|15|Music & art|KW
+Diamond painting kit|20|Music & art|WYAS
+Arteza acrylic paint set|25|Music & art|KWYA
+Tombow Dual Brush pens 10-pack|20|Music & art|WYA
+Pokémon TCG Elite Trainer Box|50|Toys & collectibles|KWY
+Pokémon TCG booster bundle|30|Toys & collectibles|KWY
+Pokémon card binder|15|Toys & collectibles|KWY
+Funko Pop anime vinyl figure|12|Toys & collectibles|KWYA
+LEGO Icons Flower Bouquet|60|Toys & collectibles|YAS
+LEGO Icons Orchid|50|Toys & collectibles|YAS
+LEGO Technic Lamborghini Sián FKP 37|450|Toys & collectibles|YA
+LEGO Star Wars Millennium Falcon|170|Toys & collectibles|WYA
+LEGO Ideas NASA Apollo Saturn V|130|Toys & collectibles|YA
+LEGO Harry Potter Hogwarts Castle|170|Toys & collectibles|WYA
+Magic: The Gathering Commander deck|45|Toys & collectibles|Y
+Yu-Gi-Oh! Structure Deck|12|Toys & collectibles|WY
+Tamagotchi Original|20|Toys & collectibles|KWY
+Nerf Elite 2.0 blaster|20|Toys & collectibles|KW
+UNO card game|8|Games & puzzles|KWYAS
+Exploding Kittens card game|20|Games & puzzles|WYA
+Catan board game|45|Games & puzzles|WYAS
+Codenames board game|20|Games & puzzles|WYAS
+Jenga Classic|15|Games & puzzles|KWYAS
+Ticket to Ride board game|55|Games & puzzles|WYAS
+Dungeons & Dragons Starter Set|25|Games & puzzles|WYA
+Dungeons & Dragons Player's Handbook|40|Games & puzzles|WYA
+Polyhedral dice set|10|Games & puzzles|WYA
+1000-piece jigsaw puzzle|15|Games & puzzles|WYAS
+Spalding NBA basketball|25|Sports & outdoors|KWYA
+Adidas soccer ball|25|Sports & outdoors|KWYA
+Wilson K2 football|30|Sports & outdoors|KWYA
+Complete skateboard 31 inch|60|Sports & outdoors|WY
+Impala roller skates|70|Sports & outdoors|WYA
+Razor A5 Lux kick scooter|90|Sports & outdoors|KW
+Bike light set front and rear|20|Sports & outdoors|WYA
+Giro bike helmet|50|Sports & outdoors|KWYA
+Kryptonite U-lock bike lock|45|Sports & outdoors|WYA
+ENO DoubleNest hammock|75|Sports & outdoors|YA
+Mini basketball hoop for door|25|Sports & outdoors|KW
+Discraft Ultra-Star disc|15|Sports & outdoors|WYA
+Yoga mat|20|Wellness|WYAS
+Resistance bands set|15|Wellness|WYAS
+Manta sleep mask|35|Wellness|YA
+Fidget toy pack|15|Wellness|KW
+Theragun Mini massager|200|Wellness|YA
+Yamaha F310 acoustic guitar|140|Music & art|WYA
+Squier Sonic Stratocaster electric guitar|230|Music & art|YA
+61-key digital keyboard|110|Music & art|KWYA
+Dunlop Tortex guitar picks 36-pack|10|Music & art|WYA
+Snark clip-on guitar tuner|15|Music & art|WYA
+Drum practice pad|20|Music & art|KWYA
+Audio-Technica AT-LP60X record player|140|Music & art|YAS
+Crosley Cruiser Bluetooth record player|100|Music & art|WYAS
+Focusrite Scarlett Solo audio interface|130|Music & art|YA
+Akai MPK Mini MIDI keyboard|120|Music & art|YA
+Apple Pencil (USB-C)|79|School & desk|WYA
+TI-84 Plus CE graphing calculator|130|School & desk|Y
+Casio fx-991EX scientific calculator|20|School & desk|Y
+Mead Five Star 5-subject notebook|10|School & desk|KWY
+Pilot G2 gel pens 12-pack|12|School & desk|KWYAS
+Zebra Mildliner highlighters|10|School & desk|WYA
+Academic planner|18|School & desk|WYA
+Laptop sleeve 13 inch|25|School & desk|WYA
+Blue light blocking glasses|20|School & desk|WYAS
+Portable monitor 15.6 inch|100|Tech & gadgets|YA
+Samyang Buldak hot chicken ramen variety|20|Food & drinks|WYA
+Feastables MrBeast chocolate bars|30|Food & drinks|KWY
+Takis Fuego snack bags|20|Food & drinks|KWY
+Boba bubble tea kit|25|Food & drinks|WYA
+Hot chocolate bombs set|20|Food & drinks|KWYAS
+Mini popcorn machine|40|Food & drinks|KWYA
+Dash Mini Waffle Maker|15|Home & kitchen|KWYA
+Crossbody phone bag|20|Travel & bags|WYA
+Packing cubes set|20|Travel & bags|YAS
+Travel neck pillow|20|Travel & bags|YAS

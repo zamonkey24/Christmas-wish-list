@@ -5,6 +5,7 @@ import { Notice, inputStyle } from './ui';
 import ProductCard from './ProductCard';
 
 const SORTS = [['relevance', 'Best match'], ['price-asc', 'Price: low to high'], ['price-desc', 'Price: high to low'], ['newest', 'Newest']];
+const AGES = [['', 'All ages'], ['kids', 'Kids (6–9)'], ['tweens', 'Tweens (10–12)'], ['teens', 'Teens (13–17)'], ['young-adults', 'Young adults (18–25)'], ['adults', 'Adults (26–49)'], ['seniors', '50+']];
 const BUDGETS = [['', 'Any price'], ['25', 'Under $25'], ['50', 'Under $50'], ['100', 'Under $100'], ['200', 'Under $200']];
 
 // Browse and search every product in GiftBloom's catalog. It keeps loading as you scroll.
@@ -12,10 +13,11 @@ export default function CatalogPage({ listId, onOpenBloom }) {
   const [input, setInput] = useState('');
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
+  const [age, setAge] = useState('');
   const [sort, setSort] = useState('relevance');
   const [max, setMax] = useState('');
   const [items, setItems] = useState([]);
-  const [meta, setMeta] = useState({ total: 0, pages: 1, categories: {} });
+  const [meta, setMeta] = useState({ total: 0, pages: 1, categories: {}, ages: {} });
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,18 +33,19 @@ export default function CatalogPage({ listId, onOpenBloom }) {
       const params = new URLSearchParams({ page: String(nextPage), limit: '24', sort });
       if (q) params.set('q', q);
       if (category) params.set('category', category);
+      if (age) params.set('age', age);
       if (max) params.set('max', max);
       const r = await api('GET', `catalog?${params}`);
       if (my !== gen.current) return;
       setItems(prev => (replace ? r.items : [...prev, ...r.items.filter(n => !prev.some(p => p.id === n.id))]));
-      setMeta({ total: r.total, pages: r.pages, categories: r.categories });
+      setMeta({ total: r.total, pages: r.pages, categories: r.categories, ages: r.ages || {} });
       setPage(r.page);
     } catch (e) {
       if (my === gen.current) setError(e.message);
     } finally {
       if (my === gen.current) setLoading(false);
     }
-  }, [q, category, sort, max]);
+  }, [q, category, age, sort, max]);
 
   // A new search, filter or sort starts again from the top.
   useEffect(() => { load(1, true); }, [load]);
@@ -83,7 +86,15 @@ export default function CatalogPage({ listId, onOpenBloom }) {
             <select value={max} onChange={(e) => setMax(e.target.value)} aria-label="Price" style={{ ...inputStyle, flex: '1 1 130px', background: '#0f172a' }}>{BUDGETS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
             <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort" style={{ ...inputStyle, flex: '1 1 160px', background: '#0f172a' }}>{SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
           </div>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingTop: '14px' }}>
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingTop: '14px' }} aria-label="Age group">
+            {AGES.map(([v, label]) => (
+              <button key={v || 'all-ages'} onClick={() => setAge(v)} className="glass-pill"
+                style={{ padding: '6px 14px', fontSize: '0.8rem', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer', color: age === v ? '#0b1220' : '#cbd5e1', background: age === v ? '#a5b4fc' : undefined, borderColor: age === v ? '#a5b4fc' : undefined }}>
+                {label}{v && meta.ages[v] !== undefined ? ` (${meta.ages[v]})` : ''}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingTop: '10px' }}>
             {chip('', 'All', totalAll)}
             {Object.entries(meta.categories).sort((a, b) => b[1] - a[1]).map(([c, n]) => chip(c, c, n))}
           </div>
@@ -91,6 +102,7 @@ export default function CatalogPage({ listId, onOpenBloom }) {
 
         {error && <div style={{ marginBottom: '16px' }}><Notice tone="error">{error}</Notice></div>}
 
+        <div style={{ color: '#64748b', fontSize: '0.78rem', margin: '0 4px 10px' }}>💡 <strong>Ideas</strong> are well-known gifts with an estimated price (~) and a link that searches Amazon for them. Gifts with a real photo are verified listings.</div>
         <div style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 4px 12px' }}>{loading && !items.length ? 'Searching…' : `${meta.total} ${meta.total === 1 ? 'gift' : 'gifts'}${q ? ` for “${q}”` : ''}`}</div>
 
         {!loading && !items.length && !error ? (

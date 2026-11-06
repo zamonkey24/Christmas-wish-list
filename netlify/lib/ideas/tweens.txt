@@ -1,0 +1,43 @@
+LEGO Technic building set|50|Toys & collectibles|T
+LEGO Speed Champions race car|25|Toys & collectibles|KT
+Bubble Skincare cleanser|12|Skincare & body|T
+Lip Smackers lip balm set|10|Skincare & body|K
+Friendship bracelet kit|15|Music & art|KT
+Journal with lock|15|School & desk|KT
+Thames & Kosmos science experiment kit|40|Maker & STEM|KT
+AmScope microscope kit|60|Maker & STEM|KT
+Apples to Apples card game|20|Games & puzzles|KT
+Telestrations board game|25|Games & puzzles|T
+Mastermind game|10|Games & puzzles|KT
+Blokus board game|20|Games & puzzles|KT
+Wings of Fire Book 1|8|Books & manga|K
+Warriors: Into the Wild|8|Books & manga|K
+Smile by Raina Telgemeier|10|Books & manga|K
+Wonder by R.J. Palacio|9|Books & manga|KT
+Dork Diaries Book 1|10|Books & manga|K
+Guinness World Records book|25|Books & manga|KT
+Origami kit|12|Music & art|KT
+Beading jewelry kit|20|Music & art|K
+Stanley IceFlow flip straw tumbler|35|Home & kitchen|T
+JLab Go Air earbuds|20|Audio|KT
+Pop-It fidget toy|8|Toys & collectibles|K
+Instax Mini Link 3 phone printer|150|Tech & gadgets|T
+Slime making kit|20|Toys & collectibles|K
+Roller skates (adjustable)|45|Sports & outdoors|KT
+Skate helmet|30|Sports & outdoors|KT
+Badminton set|35|Sports & outdoors|KT
+Soccer goal net set|40|Sports & outdoors|KT
+Basketball hoop (portable)|120|Sports & outdoors|KT
+Painting by numbers kit|18|Music & art|KT
+Mini hot glue gun craft kit|20|Music & art|KT
+Washi tape set|10|School & desk|KT
+Pencil case with compartments|10|School & desk|KT
+Smencils scented pencils|8|School & desk|K
+Kids smartwatch|60|Tech & gadgets|K
+Kids digital camera|50|Tech & gadgets|K
+Jigsaw puzzle 500-piece|12|Games & puzzles|KT
+Bath bomb set for kids|15|Skincare & body|KT
+Sleep mask and slippers set|20|Wellness|KT
+Hair accessories set|12|Fashion & shoes|KT
+Mini backpack|25|Travel & bags|KT
+Bluetooth karaoke microphone|30|Audio|KT

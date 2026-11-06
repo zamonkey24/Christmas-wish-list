@@ -24,9 +24,33 @@ Rules:
 - Respect any budget the person mentions. Prefer products that fit their budget and what they described.
 - If nothing fits well, say so plainly and suggest how to search differently. Leave pickIds empty.
 - Pick up to ${MAX_PICKS} products. Keep the reply short (under 80 words), warm and specific about why each pick fits.
+- Products marked est:true are gift ideas with estimated prices: say "about $X" for those, never an exact price.
+- If the person mentions who the gift is for (age, relationship), match what that person would enjoy.
 - Do not mention product ids in the reply text.`;
 
 // Pulls a budget and search words out of what people type ("something for my brother under $40 who likes cologne").
+// Which age group someone is shopping for, from words like "14 year old", "my grandma" or "a teenager".
+export function ageFrom(text) {
+  const t = ` ${text.toLowerCase()} `;
+  const num = t.match(/\b(\d{1,2})\s*(?:-|\s)?(?:year|yr|yo)/) || t.match(/\b(?:age|aged|turning|turns)\s*(\d{1,2})\b/);
+  if (num) {
+    const n = Number(num[1]);
+    if (n <= 9) return 'kids';
+    if (n <= 12) return 'tweens';
+    if (n <= 17) return 'teens';
+    if (n <= 25) return 'young-adults';
+    if (n <= 49) return 'adults';
+    return 'seniors';
+  }
+  if (/\b(grandma|grandpa|grandmother|grandfather|grandparents?|retired|retirement|senior|seniors|elderly|great[- ]aunt)\b/.test(t)) return 'seniors';
+  if (/\b(toddler|little kid|young child|preschool|kindergarten)\b/.test(t) || /\b(kid|kids|child|children|son|daughter|nephew|niece)\b/.test(t) && !/teen/.test(t)) return /\b(tween)\b/.test(t) ? 'tweens' : 'kids';
+  if (/\b(tween|tweens|middle school)\b/.test(t)) return 'tweens';
+  if (/\b(teen|teens|teenager|teenagers|high school|highschooler)\b/.test(t)) return 'teens';
+  if (/\b(college|university|dorm|grad student|young adult|20s|twenties|first apartment)\b/.test(t)) return 'young-adults';
+  if (/\b(adult|dad|mom|father|mother|husband|wife|boss|coworker|30s|40s|thirties|forties)\b/.test(t)) return 'adults';
+  return '';
+}
+
 export function parseIntent(messages) {
   const userText = messages.filter(m => m.role === 'user').map(m => m.content).join(' ').slice(-1200);
   const last = [...messages].reverse().find(m => m.role === 'user')?.content || '';
@@ -42,16 +66,20 @@ export function parseIntent(messages) {
   // The newest message wins for the budget; older messages still supply interests.
   const newest = money(last);
   const budget = Object.keys(newest).length ? newest : money(userText); // the newest message wins; older ones fill in
-  return { ...budget, tokens: [...new Set(tokenize(`${userText} ${last}`))].slice(0, 8) };
+  return { ...budget, age: ageFrom(last) || ageFrom(userText), tokens: [...new Set(tokenize(`${userText} ${last}`))].slice(0, 8) };
 }
 
 export function candidatesFor(catalog, intent) {
   const seen = new Map();
   const add = (r) => r.items.forEach(p => { if (!seen.has(p.id)) seen.set(p.id, p); });
   const range = { min: intent.min || 0, max: intent.max ?? Infinity };
-  // Every word first, then each word alone, then anything in budget so there is always something to show.
-  add(searchProducts(catalog, { q: intent.tokens.join(' '), ...range, limit: 30 }));
-  if (seen.size < 12) intent.tokens.forEach(t => add(searchProducts(catalog, { q: t, ...range, limit: 12 })));
+  // Best fit for the age first; if that is thin, widen to everything. Every word first, then each word alone,
+  // then anything in budget so there is always something to show.
+  for (const age of intent.age ? [intent.age, ''] : ['']) {
+    add(searchProducts(catalog, { q: intent.tokens.join(' '), age, ...range, limit: 30 }));
+    if (seen.size < 12) intent.tokens.forEach(t => add(searchProducts(catalog, { q: t, age, ...range, limit: 12 })));
+    if (seen.size >= 8) break;
+  }
   if (seen.size < 8) add(searchProducts(catalog, { ...range, limit: 12 }));
   return [...seen.values()].slice(0, 30);
 }
@@ -67,21 +95,30 @@ export function liteAnswer(catalog, messages) {
   if (intent.tokens.length && scored.some(x => x.m > 0)) scored = scored.filter(x => x.m > 0);
   const ranked = scored.sort((a, b) => b.m * 3 + b.fit - (a.m * 3 + a.fit)).slice(0, MAX_PICKS).map(x => x.p);
   const budgetText = intent.around ? ` around $${intent.around}` : intent.max ? ` under $${intent.max}` : '';
-  if (!intent.tokens.length) {
-    // Nothing specific yet: offer a mix of popular kinds of gift and ask for more detail.
+  const nothingMatched = intent.tokens.length && !scored.some(x => x.m > 0);
+  if (!intent.tokens.length || (nothingMatched && intent.age)) {
+    // Nothing specific yet (or nothing matched but we know the age): offer a mix of popular kinds of gift.
     const mix = [];
-    for (const category of ['Fragrance', 'Hair care', 'Skincare & body', 'Tech & gadgets', 'Bikes & outdoors', 'Fun & games']) {
+    // One pick from each different kind of gift, in the order they rank.
+    for (const category of [...new Set(cands.map(p => p.category))]) {
       const hit = cands.find(p => p.category === category && !mix.includes(p));
       if (hit) mix.push(hit);
       if (mix.length === MAX_PICKS) break;
     }
-    if (mix.length) return { reply: `Tell me who it's for, what they like and your budget and I'll narrow it down. Here is a mix to start with${budgetText}.`, picks: mix };
+    if (mix.length) {
+      const forWho = { kids: ' for kids', tweens: ' for tweens', teens: ' for teens', 'young-adults': ' for young adults', adults: ' for adults', seniors: ' for people 50+' }[intent.age] || '';
+      const lead = nothingMatched ? "I couldn't find that exactly, so here is a mix of popular ideas" : "Tell me who it's for, what they like and your budget and I'll narrow it down. Here is a mix to start with";
+      const est = mix.some(p => p.estimated || p.kind === 'idea') ? ' Prices marked ~ are estimates.' : '';
+      return { reply: `${lead}${forWho}${budgetText}.${est}`, picks: mix };
+    }
   }
   if (!ranked.length || (intent.tokens.length && !scored.some(x => x.m > 0))) {
     return { reply: `I couldn't find anything${budgetText} for that. Try a different word (like “cologne”, “hair”, “skincare” or “bike”) or raise the budget.`, picks: [] };
   }
-  const what = intent.tokens.length ? ` for “${intent.tokens.slice(0, 3).join(' ')}”` : '';
-  return { reply: `Here ${ranked.length === 1 ? 'is 1 idea' : `are ${ranked.length} ideas`}${what}${budgetText}. Tap one to see it, or add it to your wishlist.`, picks: ranked };
+  const ageText = { kids: 'kids', tweens: 'tweens', teens: 'teens', 'young-adults': 'young adults', adults: 'adults', seniors: 'people 50+' }[intent.age];
+  const what = (intent.tokens.length ? ` for “${intent.tokens.slice(0, 3).join(' ')}”` : '') + (ageText ? ` (${ageText})` : '');
+  const estNote = ranked.some(p => p.estimated || p.kind === 'idea') ? ' Prices marked ~ are estimates.' : '';
+  return { reply: `Here ${ranked.length === 1 ? 'is 1 idea' : `are ${ranked.length} ideas`}${what}${budgetText}. Tap one to see it, or add it to your wishlist.${estNote}`, picks: ranked };
 }
 
 export function createBloom({ getCatalog, client = null, model = DEFAULT_MODEL, log = console }) {
@@ -89,7 +126,7 @@ export function createBloom({ getCatalog, client = null, model = DEFAULT_MODEL, 
     const intent = parseIntent(messages);
     const cands = candidatesFor(catalog, intent);
     if (!cands.length) return { reply: 'I could not find anything in the catalog for that yet. Try a broader search.', picks: [] };
-    const list = cands.map(p => ({ id: p.id, title: p.title, price: p.price, category: p.category }));
+    const list = cands.map(p => ({ id: p.id, title: p.title, price: p.price, category: p.category, ...(p.kind === 'idea' ? { est: true } : {}) }));
     const convo = messages.slice(-8).map(m => ({ role: m.role, content: String(m.content).slice(0, 600) }));
     // The catalog goes in as its own labelled message so it is always treated as data.
     const params = {

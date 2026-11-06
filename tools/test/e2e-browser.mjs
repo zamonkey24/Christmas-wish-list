@@ -1,4 +1,4 @@
-// Real-browser test of the home page, accounts, forgot password, emails, invite links, claims, add-by-link, catalog, Bloom AI and the original-list import.
+// Real-browser test of the home page, accounts, forgot password, emails, invite links, claims, add-by-link, catalog (ages, ideas), Bloom AI and the original-list import.
 // Setup: `npm run build`, then `node tools/test/e2e-server.mjs 4300 &`, then (in a folder with `npm i puppeteer-core`) run this file.
 // Needs a saved Amazon product page at /tmp/B0DBRGYTDB.html (see e2e-server.mjs FIXTURE). Screenshots go to /tmp/pp/.
 import puppeteer from 'puppeteer-core';
@@ -132,6 +132,19 @@ try {
   await shot(S, '10-bloom-chat');
   await S.click('button[aria-label="Close Bloom AI"]'); await gone(S, "Hi, I'm Bloom AI").catch(() => {});
   await clickText(S, 'My Wishlist', bar); await must(S, 'All Gifts (2)'); log('both added gifts are on the wishlist');
+
+  // ---------- gift ideas: ages, 3D printers, estimated prices
+  await clickText(S, 'Catalog', bar); await must(S, 'Gift Catalog');
+  await clickText(S, 'Teens (13–17)', 'div[aria-label="Age group"] button'); await sleep(800);
+  { const t = await text(S); assert.match(t, /Teens \(13–17\) \(\d{3}\)/); } log('age chips show how many gifts each age group has');
+  await type(S, 'input[aria-label="Search the catalog"]', '3d printer'); await must(S, 'Bambu Lab A1 mini'); await sleep(500);
+  { const t = await text(S); assert.ok(t.includes('~$249') && t.includes('Find on Amazon') && t.includes('Creality Ender-3') && t.includes('Idea')); } log('teens + "3d printer" finds real 3D printers with ~estimated prices and a Find on Amazon link');
+  await shot(S, '11-ideas');
+  const href = await S.$$eval('a', as => as.find(a => a.innerText.includes('Find on Amazon')).href); assert.ok(href.startsWith('https://www.amazon.com/s?k=')); log('the link opens an Amazon search for exactly that product');
+  await S.evaluate(() => [...document.querySelectorAll('button')].find(b => b.innerText.includes('Add to my wishlist')).click()); await sleep(900);
+  await clickText(S, 'My Wishlist', bar); await must(S, 'All Gifts (3)'); await clickText(S, 'All Gifts'); await must(S, '~$'); log('an idea added to the wishlist keeps its ~ estimated price');
+  await S.click('button[aria-label="Open Bloom AI"]'); await type(S, 'input[aria-label="Message Bloom AI"]', 'my 14 year old brother loves 3d printing, under $300'); await S.keyboard.press('Enter'); await must(S, 'estimates'); await must(S, '(teens)'); log('Bloom AI understands the age and says estimated prices are estimates');
+  await S.click('button[aria-label="Close Bloom AI"]');
 
   // ---------- original wishlist import (Arav's real data) still works
   const ctxO = await browser.createBrowserContext(); const O = await ctxO.newPage(); O.on('pageerror', e => errs.push('O:' + e.message));

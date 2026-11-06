@@ -5,7 +5,7 @@ import { promisify } from 'node:util';
 import { fetchProduct } from './preview.mjs';
 import { createMailer } from './mailer.mjs';
 import { welcomeEmail, resetEmail, promoEmail } from './emails.mjs';
-import { starterCatalog, searchProducts, makeProduct, productIdOf } from './catalog.mjs';
+import { starterCatalog, ideaCatalog, searchProducts, makeProduct, productIdOf } from './catalog.mjs';
 import { createBloom } from './bloom.mjs';
 
 const scrypt = promisify(crypto.scrypt);
@@ -73,6 +73,7 @@ function cleanItem(raw) {
   const mustGet = str(raw.mustGet, 120);
   if (mustGet) item.mustGet = mustGet;
   if (Number.isFinite(raw.addedIn)) item.addedIn = raw.addedIn;
+  if (raw.estimated === true) item.estimated = true; // price is an estimate (a gift idea, not a verified listing)
   if (Number.isFinite(raw.deletedAt)) item.deletedAt = raw.deletedAt;
   return item;
 }
@@ -117,7 +118,7 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
     const community = (await getJSON('catalog/community'))?.items || [];
     const starters = starterCatalog();
     const seen = new Set(starters.map(p => p.id));
-    return [...starters, ...community.filter(p => !seen.has(p.id))];
+    return [...starters, ...community.filter(p => !seen.has(p.id)), ...ideaCatalog()];
   }
   const bloom = createBloom({ getCatalog: allProducts, client: bloomClient, model: env.BLOOM_MODEL || undefined });
 
@@ -574,6 +575,7 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
     return json(searchProducts(await allProducts(), {
       q: (q.get('q') || '').slice(0, 100),
       category: q.get('category') || '',
+      age: q.get('age') || '',
       min: num('min', 0),
       max: num('max', Infinity),
       sort: q.get('sort') || 'relevance',

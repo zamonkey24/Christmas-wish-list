@@ -387,7 +387,7 @@ export default function AdminWishlist({
                   {item.priority}
                 </div>
                 <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#e11d48', color: '#fff', padding: '3px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '0.9rem' }}>
-                  ${item.price}
+                  {item.estimated ? '~' : ''}${item.price}
                 </div>
               </div>
 
@@ -452,7 +452,7 @@ export default function AdminWishlist({
                       <img src={item.imageUrl} alt="" style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }} />
                       <div style={{ flex: '1 1 180px', minWidth: 0 }}>
                         <div style={{ fontWeight: 600, color: '#f8fafc', fontSize: '0.9rem' }}>{item.title}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>${item.price} • deleted {timeAgo(item.deletedAt)}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{item.estimated ? '~' : ''}${item.price} • deleted {timeAgo(item.deletedAt)}</div>
                       </div>
                       <button onClick={() => onRestoreItem(item.id)} className="festive-btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
                         <Undo2 style={{ width: '14px', height: '14px' }} />

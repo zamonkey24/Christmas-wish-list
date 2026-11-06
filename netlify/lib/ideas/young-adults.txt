@@ -1,0 +1,71 @@
+Apple MacBook Air 13-inch (M4)|999|Tech & gadgets|A
+Apple iPad Air|599|Tech & gadgets|A
+Chromebook Plus laptop|350|Tech & gadgets|T
+Instant Pot Duo 6 qt|90|Home & kitchen|A
+Ninja air fryer 4 qt|100|Home & kitchen|A
+Keurig K-Mini coffee maker|90|Home & kitchen|A
+Nespresso Vertuo Pop|140|Home & kitchen|A
+Bialetti Moka Express stovetop espresso maker|35|Home & kitchen|A
+Bodum Chambord French press|35|Home & kitchen|A
+NutriBullet Pro blender|90|Home & kitchen|A
+Lodge cast iron skillet 10.25 inch|25|Home & kitchen|A
+Victorinox Fibrox 8-inch chef's knife|45|Home & kitchen|A
+Dash Rapid Egg Cooker|20|Home & kitchen|T
+JBL Clip 5 speaker|80|Audio|TA
+Sony WF-1000XM5 earbuds|300|Audio|A
+Sonos Roam 2 speaker|180|Audio|A
+Marshall Emberton II speaker|170|Audio|A
+Dyson Airwrap multi-styler|600|Hair care|A
+Dyson Supersonic hair dryer|430|Hair care|A
+Shark FlexStyle air styler|280|Hair care|A
+Philips Sonicare 4100 toothbrush|50|Wellness|A
+Oral-B iO Series 3 toothbrush|100|Wellness|A
+Dior Sauvage eau de toilette|130|Fragrance|A
+Yves Saint Laurent Y eau de parfum|110|Fragrance|A
+Versace Eros eau de toilette|90|Fragrance|A
+Paco Rabanne 1 Million|90|Fragrance|A
+Giorgio Armani Acqua di Giò|90|Fragrance|A
+Viktor&Rolf Flowerbomb|140|Fragrance|A
+Yves Saint Laurent Libre eau de parfum|130|Fragrance|A
+Marc Jacobs Daisy eau de toilette|100|Fragrance|AT
+Glossier You perfume|80|Fragrance|AT
+Diptyque Baies candle|75|Room & decor|A
+Garmin Forerunner 55|200|Tech & gadgets|A
+Apple Watch Series 10|400|Tech & gadgets|A
+Gaiam yoga mat|25|Wellness|AT
+Blender Bottle Classic shaker|12|Wellness|AT
+TriggerPoint foam roller|35|Wellness|A
+Osprey Daylite backpack|70|Travel & bags|AT
+Away The Bigger Carry-On suitcase|275|Travel & bags|A
+Bellroy Slim Sleeve wallet|80|Fashion & shoes|A
+The Ridge slim wallet|100|Fashion & shoes|A
+Timex Weekender watch|55|Fashion & shoes|AT
+Casio Vintage A168 gold watch|60|Fashion & shoes|AT
+Seiko 5 automatic watch|280|Fashion & shoes|A
+Oakley Holbrook sunglasses|150|Fashion & shoes|A
+New Era 9FIFTY snapback cap|35|Fashion & shoes|AT
+Patagonia Better Sweater fleece jacket|150|Fashion & shoes|A
+Uniqlo Ultra Light Down jacket|90|Fashion & shoes|A
+Dr. Martens 1460 boots|170|Fashion & shoes|AT
+Timberland 6-inch boots|200|Fashion & shoes|A
+Hoka Clifton 9 running shoes|150|Fashion & shoes|A
+Birkenstock Boston clogs|160|Fashion & shoes|A
+Cotton sheet set (queen)|40|Home & kitchen|A
+Memory foam mattress topper|80|Home & kitchen|A
+FlexiSpot standing desk converter|150|School & desk|A
+Dell 27-inch monitor|200|Tech & gadgets|A
+Logitech C920 webcam|70|Tech & gadgets|A
+Mini projector|120|Tech & gadgets|A
+Philips Hue starter kit|80|Tech & gadgets|A
+Levoit Core 300 air purifier|100|Home & kitchen|A
+Levoit humidifier|40|Home & kitchen|A
+Handheld vacuum|40|Home & kitchen|A
+Garment steamer|40|Home & kitchen|A
+The Psychology of Money by Morgan Housel|16|Books & manga|A
+Project Hail Mary by Andy Weir|18|Books & manga|A
+Sapiens by Yuval Noah Harari|20|Books & manga|A
+Rich Dad Poor Dad|10|Books & manga|AT
+Moleskine Classic notebook|20|School & desk|A
+Audible gift membership|45|Gift cards|A
+Cards Against Humanity|30|Games & puzzles|A
+Jackbox Party Pack|25|Gaming|AT

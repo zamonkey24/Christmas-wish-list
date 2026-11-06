@@ -197,7 +197,7 @@ export default function WishlistGallery({ wishlistItems, onClaimItem, onUnclaimI
                   {item.priority}
                 </div>
                 <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#e11d48', color: '#fff', padding: '3px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '0.9rem' }}>
-                  ${item.price}
+                  {item.estimated ? '~' : ''}${item.price}
                 </div>
               </div>
 

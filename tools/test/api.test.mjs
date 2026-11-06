@@ -515,4 +515,51 @@ await test('Bloom (Claude): another model can be chosen with BLOOM_MODEL (no fal
   assert.equal(calls[0].model, 'claude-haiku-5-5'); assert.ok(!('fallbacks' in calls[0]));
 });
 
+console.log('gift ideas catalog');
+import IDEAS from '../../netlify/lib/ideas-data.mjs';
+await test('ideas data is clean: unique ids, whole-dollar prices, real categories, working Amazon search links', () => {
+  assert.ok(IDEAS.length >= 500);
+  assert.equal(new Set(IDEAS.map(i => i.id)).size, IDEAS.length);
+  assert.equal(new Set(IDEAS.map(i => i.title.toLowerCase())).size, IDEAS.length);
+  for (const i of IDEAS) {
+    assert.ok(Number.isInteger(i.price) && i.price >= 1 && i.price <= 5000, i.title);
+    assert.ok(i.url.startsWith('https://www.amazon.com/s?k=') && new URL(i.url).searchParams.get('k') === i.title, i.title);
+    assert.ok(i.ages.length >= 1 && i.estimated === true && i.kind === 'idea' && i.image.startsWith('/ideas/') && i.tags.length >= 1, i.title);
+  }
+});
+await test('every age group has a real selection (teens has well over 100)', () => {
+  const n = (g) => IDEAS.filter(i => i.ages.includes(g)).length;
+  assert.ok(n('teens') >= 200 && n('young-adults') >= 150 && n('adults') >= 150 && n('tweens') >= 100 && n('kids') >= 100 && n('seniors') >= 60, JSON.stringify({ teens: n('teens'), ya: n('young-adults'), adults: n('adults'), tweens: n('tweens'), kids: n('kids'), seniors: n('seniors') }));
+  assert.ok(IDEAS.filter(i => /3d printer/i.test(i.title) && i.ages.includes('teens')).length >= 4);
+});
+await test('catalog: age filter, 3D printers for teens, ideas flagged as estimates', async () => {
+  const t = (await cat('GET', 'catalog?q=3d%20printer&age=teens')).body;
+  assert.ok(t.total >= 5); assert.ok(t.items.every(i => i.estimated === true && i.url.includes('amazon.com/s?k=')));
+  const kids = (await cat('GET', 'catalog?age=kids&limit=60')).body; assert.ok(kids.items.every(i => !i.ages || i.ages.includes('kids')));
+  assert.equal((await cat('GET', 'catalog?q=3d%20printer&age=seniors')).body.total, 0);
+  const all = (await cat('GET', 'catalog?limit=60')).body; assert.ok(all.ages.teens >= 200 && all.ages.kids >= 100);
+  const fa = (await cat('GET', 'catalog?age=teens&limit=60')).body.categories; assert.ok(fa['Gaming'] >= 20 && fa['Maker & STEM'] >= 10);
+});
+await test('verified listings rank above ideas for the same words', async () => {
+  const r = (await cat('GET', 'catalog?q=cologne&limit=24')).body.items;
+  assert.ok(r.filter(i => !i.estimated).length >= 8, 'verified listings show up first');
+  assert.ok(!r[0].estimated && !r[1].estimated);
+});
+await test('an idea added to a wishlist keeps its "estimated" flag; scripts in links are still refused', async () => {
+  const idea = (await cat('GET', 'catalog?q=bambu')).body.items[0];
+  const add = await cat('POST', `lists/${catMe.myListId}/items`, { item: { title: idea.title, price: idea.price, imageUrl: idea.image, url: idea.url, tags: idea.tags, estimated: true } });
+  assert.equal(add.body.added, true);
+  const mine = (await cat('GET', `lists/${catMe.myListId}`)).body.items.find(i => i.title === idea.title);
+  assert.equal(mine.estimated, true); assert.equal(mine.imageUrl, idea.image);
+  const bad = await cat('POST', `lists/${catMe.myListId}/items`, { item: { title: 'x', price: 5, url: 'javascript:alert(1)', imageUrl: 'javascript:alert(2)' } });
+  assert.equal(bad.status, 200); const stored = (await cat('GET', `lists/${catMe.myListId}`)).body.items.find(i => i.title === 'x'); assert.equal(stored.url, ''); assert.equal(stored.imageUrl, '');
+});
+await test('Bloom understands ages and 3D printers, and says prices are estimates', async () => {
+  const r = await say(cat, 'my 14 year old brother loves 3d printing, under $300');
+  assert.equal(r.status, 200); assert.ok(r.body.picks.length >= 3 && r.body.picks.every(p => p.price <= 300 && /3D|3Doodler/i.test(p.title))); assert.match(r.body.reply, /teens/); assert.match(r.body.reply, /estimates/);
+  const g = await say(cat, 'something for my grandma who likes puzzles'); assert.match(g.body.reply, /50\+/); assert.ok(g.body.picks.some(p => /puzzle/i.test(p.title)));
+  const k = await say(cat, 'a toy for my 7 year old niece'); assert.match(k.body.reply, /kids/); assert.ok(k.body.picks.length >= 1);
+  const word = await say(cat, 'face wash for my mom'); assert.ok(word.body.picks.length >= 1 && word.body.picks.every(p => !/interface|washable/i.test(p.title)));
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ', SOME FAILED' : ''}`);
