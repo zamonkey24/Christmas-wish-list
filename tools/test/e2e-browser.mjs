@@ -120,8 +120,8 @@ try {
 
   // ---------- Bloom AI
   await S.click('button[aria-label="Open Bloom AI"]'); await must(S, "Hi, I'm Bloom AI"); await shot(S, '09-bloom-open');
-  await clickText(S, 'Cologne for my dad under $60'); await must(S, 'ideas'); await sleep(500);
-  { const t = await S.$eval('div[role="dialog"]', e => e.innerText); assert.match(t, /under \$60/); assert.ok(/\$\d+/.test(t)); } log('Bloom AI answers a gift request with real products and respects the budget');
+  await clickText(S, 'I love skincare and cologne, around $40'); await must(S, 'ideas'); await sleep(500);
+  { const t = await S.$eval('div[role="dialog"]', e => e.innerText); assert.match(t, /around \$40/); assert.ok(/\$\d+/.test(t)); } log('Bloom AI answers a gift request with real products and respects the budget');
   const addedBefore = await S.evaluate(() => [...document.querySelectorAll('div[role="dialog"] button')].filter(b => b.innerText.includes('Add to my wishlist')).length); assert.ok(addedBefore >= 2);
   await S.evaluate(() => [...document.querySelectorAll('div[role="dialog"] button')].find(b => b.innerText.includes('Add to my wishlist')).click()); await sleep(900);
   assert.ok((await S.$eval('div[role="dialog"]', e => e.innerText)).includes('Added')); log('a suggestion can be added to the wishlist right from the chat');
@@ -142,6 +142,12 @@ try {
   await clickText(S, 'My Wishlist', bar); await must(S, 'All Gifts (3)'); await clickText(S, 'All Gifts'); await must(S, '~$'); log('an idea added to the wishlist keeps its ~ estimated price');
   await S.click('button[aria-label="Open Bloom AI"]'); await type(S, 'input[aria-label="Message Bloom AI"]', 'my 14 year old brother loves 3d printing, under $300'); await S.keyboard.press('Enter'); await must(S, 'estimates'); await must(S, '(teens)'); log('Bloom AI understands the age and says estimated prices are estimates');
   await S.click('button[aria-label="Close Bloom AI"]');
+
+  // ---------- Secret Santa
+  await clickText(S, 'Secret Santa', bar); await must(S, 'Start a group');
+  await type(S, 'input[aria-label="Group name"]', 'Family Christmas'); await type(S, 'input[aria-label="Budget"]', '25'); await clickText(S, 'Create group', 'button');
+  await must(S, 'Family Christmas'); await must(S, 'Need at least 3 people to draw'); { const t = await text(S); assert.match(t, /Budget about \$25/); assert.match(t, /[A-Z0-9]{6}/); } log('Secret Santa: a group can be created and shows its join code');
+  await clickText(S, 'My Wishlist', bar);
 
   // ---------- original wishlist import (Arav's real data) still works
   const ctxO = await browser.createBrowserContext(); const O = await ctxO.newPage(); O.on('pageerror', e => errs.push('O:' + e.message));

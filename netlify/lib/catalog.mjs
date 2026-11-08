@@ -100,14 +100,15 @@ export function titleMatch(ideaTitle, otherTitle) {
 
 export const AGE_GROUPS = ['kids', 'tweens', 'teens', 'young-adults', 'adults', 'seniors'];
 const forAge = (p, age) => !age || !p.ages || p.ages.includes(age); // products without ages suit everyone
-const trust = (p) => (p.starter ? 3 : p.kind === 'idea' ? 1 : 2); // verified products first, ideas last
+const trust = (p) => (p.starter ? 3 : p.kind === 'idea' ? (p.hasPhoto ? 1.5 : 1) : 2); // verified products first, ideas last
 const specific = (p, age) => (age && p.ages?.includes(age) ? 1 : 0); // made for this age beats "suits everyone"
 
-export function searchProducts(all, { q = '', category = '', age = '', min = 0, max = Infinity, sort = 'relevance', page = 1, limit = 24 } = {}) {
+export function searchProducts(all, { q = '', category = '', age = '', min = 0, max = Infinity, sort = 'relevance', page = 1, limit = 24, photos = false } = {}) {
   const tokens = tokenize(q);
   const base = all
     .map(p => ({ p, s: score(p, tokens) }))
-    .filter(x => x.s > 0 && x.p.price >= min && x.p.price <= max);
+    .filter(x => x.s > 0 && x.p.price >= min && x.p.price <= max)
+    .filter(x => !photos || x.p.kind !== 'idea' || x.p.hasPhoto); // photos: only gifts that show the real product photo
   // Chip counts: categories reflect the chosen age; age counts reflect the chosen category.
   const counts = {};
   base.forEach(({ p }) => { if (forAge(p, age)) counts[p.category] = (counts[p.category] || 0) + 1; });

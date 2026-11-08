@@ -71,6 +71,9 @@ const money = (t) => {
   return {};
 };
 
+// Words about the conversation itself, not about what someone likes.
+const META = new Set(['what', 'should', 'add', 'adding', 'wishlist', 'wish', 'list', 'idea', 'ideas', 'suggest', 'suggestion', 'suggestions', 'recommend', 'recommendation', 'recommendations', 'get', 'getting', 'want', 'need', 'something', 'anything', 'thing', 'things', 'show', 'give', 'help', 'please', 'gift', 'gifts', 'birthday', 'christmas', 'love', 'loves', 'like', 'likes', 'into', 'really', 'good', 'great', 'best', 'cool', 'nice', 'old', 'year', 'years', 'yearold']);
+
 const has = (t, re) => re.test(` ${t.toLowerCase()} `);
 
 // Reads the whole chat: the newest message wins for the budget, older ones keep supplying interests.
@@ -87,7 +90,7 @@ export function parseIntent(messages) {
     ...budget,
     age: ageFrom(last) || ageFrom(userText),
     interests,
-    tokens: tokenize(`${userText}`).slice(0, 10),
+    tokens: tokenize(`${userText}`).filter(t => !META.has(t)).slice(0, 10),
     // what the latest message asks for relative to what was shown before
     cheaper: /\b(cheaper|less expensive|lower|smaller budget|too (?:much|expensive|pricey)|budget[- ]friendly|affordable|save)\b/.test(wantsLast),
     pricier: /\b(more expensive|pricier|splurge|treat|nicer|better quality|higher budget|go bigger|upgrade)\b/.test(wantsLast),
@@ -180,30 +183,30 @@ const FOLLOW_UPS = ['Show cheaper options', 'Something different', 'Something mo
 // ---------- the answer
 // catalog: all products; shown: ids already suggested in this chat; focus: { listId, ownerName, items:[{id,title,price,category,claimed,image,url}] } or null
 // Friendly chat that is not a gift search: greetings, thanks, "what can you do?".
-const START = ['Gift for a teen under $50', 'Something for my mom', 'Tech gadgets under $100'];
+const START = ['I love gaming, under $50', 'Skincare for me around $40', "I'm into 3D printing, under $300"];
 function smallTalk(text) {
   const t = String(text).toLowerCase().replace(/[^a-z' ]+/g, ' ').replace(/\s+/g, ' ').trim();
   if (!t) return null;
   if (/^(hi|hello|hey|hiya|yo|sup|howdy|good (morning|afternoon|evening)|hey bloom|hi bloom)( there| bloom)?$/.test(t)) {
-    return { reply: "Hi! I'm Bloom, your gift-finding buddy. Tell me who you're shopping for, or paste a product link and I'll add it to your wishlist with the photo and price.", picks: [], followUps: START };
+    return { reply: "Hi! I'm Bloom, your gift-finding buddy. Tell me what you're into and I'll find things for your wishlist, or paste a product link and I'll add it with the photo and price.", picks: [], followUps: START };
   }
   if (/^(thanks|thank you|thx|ty|thanks bloom|cool|awesome|great|nice|perfect|love it|ok|okay)( so much| a lot)?$/.test(t)) {
     return { reply: "You're welcome! Want more ideas, or have a link you'd like me to add?", picks: [], followUps: ['Show cheaper options', 'Something different', 'Paste a link'] };
   }
   if (/^(help|help me|what can you do|what do you do|who are you|how does this work|how do you work|what are you|how can you help)$/.test(t)) {
-    return { reply: "I can find gift ideas from age, interests and budget, suggest things people on shared wishlists still want, and add any product link you paste to your wishlist with its name, photo and price. You can also talk to me with the mic button.", picks: [], followUps: START };
+    return { reply: "I can build your wishlist: tell me your interests, age and budget and I'll find things you'd love, notice what's already on your list so I don't repeat it, and add any product link you paste with its name, photo and price. You can also talk to me with the mic button.", picks: [], followUps: START };
   }
   if (/^(how are you|how are you doing|how's it going|whats up|what's up)$/.test(t)) {
-    return { reply: "Doing great, thanks for asking! Who are we finding a gift for?", picks: [], followUps: START };
+    return { reply: "Doing great, thanks for asking! What are you into these days?", picks: [], followUps: START };
   }
   return null;
 }
 
-export function liteAnswer({ catalog, messages, shown = [], focus = null }) {
+export function liteAnswer({ catalog, messages, shown = [], focus = null, owned = [], taste = [] }) {
   const small = smallTalk(messages[messages.length - 1]?.content || '');
   if (small) return small;
   const intent = parseIntent(messages);
-  const exclude = new Set(shown);
+  const exclude = new Set([...shown, ...owned]); // never suggest what is already on their wishlist
   const byId = new Map(catalog.map(p => [p.id, p]));
   const shownProducts = shown.map(id => byId.get(id)).filter(Boolean);
   const avgShown = shownProducts.length ? shownProducts.reduce((s, p) => s + p.price, 0) / shownProducts.length : 0;
@@ -239,7 +242,13 @@ export function liteAnswer({ catalog, messages, shown = [], focus = null }) {
   }
 
   const known = intent.interests.length || intent.tokens.length || intent.age || intent.max;
-  const ask = !known;
+  let ask = !known;
+  let fromTaste = false;
+  if (ask && taste.length) { // nothing said: learn their taste from what is already on their wishlist
+    const t = taste.join(' ').toLowerCase();
+    const learned = INTERESTS.filter(i => i.words.some(w => t.includes(w)));
+    if (learned.length) { intent.interests = learned.slice(0, 3); ask = false; fromTaste = true; }
+  }
   const pool = candidatePool(catalog, intent, { exclude });
   let ranked = rank(pool, intent);
   // Only show things that match something they said, when they said something.
@@ -261,22 +270,23 @@ export function liteAnswer({ catalog, messages, shown = [], focus = null }) {
         return { reply: `I couldn't find that exactly, so here is a mix of popular ideas${intent.age ? ` for ${AGE_LABEL[intent.age]}` : ''}${intent.max ? ` under $${intent.max}` : ''}. Tell me more about what they like and I'll narrow it down.`, picks: chosen.map(r => ({ ...r.p, source: 'catalog', why: whyFor(r, intent) })), followUps: FOLLOW_UPS };
       }
     }
-    return { reply: shown.length ? "That's everything I have for that. Try a different interest or a bigger budget." : `I couldn't find anything for that${intent.max ? ` under $${intent.max}` : ''}. Try a different word (like “cologne”, “3D printer”, “hair” or “bike”) or a bigger budget.`, picks: [], followUps: ['Gift for a teen under $50', 'Tech gadgets under $100'] };
+    return { reply: shown.length ? "That's everything I have for that. Try a different interest or a bigger budget." : `I couldn't find anything for that${intent.max ? ` under $${intent.max}` : ''}. Try a different word (like “cologne”, “3D printer”, “hair” or “bike”) or a bigger budget.`, picks: [], followUps: ['I love gaming, under $50', 'Skincare for me around $40'] };
   }
 
   const picks = chosen.map(r => ({ ...r.p, source: 'catalog', why: whyFor(r, intent) }));
   const hasEstimates = picks.some(p => p.estimated || p.kind === 'idea');
   const likes = intent.interests.slice(0, 2).map(i => i.label).join(' and ');
   let lead;
-  if (ask) lead = "Tell me who it's for (their age), what they like and a budget, and I'll narrow it down. Here is a mix to start with";
+  if (ask) lead = "Tell me what you're into, your age and a budget, and I'll find things for your wishlist. Here is a mix to start with";
+  else if (fromTaste) lead = `Based on what's already on your wishlist (${likes}), you might also love these`;
   else if (intent.cheaper) lead = `Here are some lower-priced options`;
   else if (intent.pricier) lead = `Here are some more special picks`;
   else if (intent.another) lead = `Here are some different ideas`;
-  else lead = `Here ${picks.length === 1 ? 'is 1 idea' : `are ${picks.length} ideas`}${likes ? ` for someone into ${likes}` : intent.tokens.length ? ` for “${intent.tokens.slice(0, 3).join(' ')}”` : ''}`;
+  else lead = `Here ${picks.length === 1 ? 'is 1 idea' : `are ${picks.length} ideas`}${likes ? ` for your love of ${likes}` : intent.tokens.length ? ` for “${intent.tokens.slice(0, 3).join(' ')}”` : ''}`;
   const where = `${intent.age ? ` (${AGE_LABEL[intent.age]})` : ''}${intent.around ? ` around $${intent.around}` : intent.max ? ` under $${intent.max}` : ''}`;
   return {
     reply: `${lead}${ask ? '' : where}.${hasEstimates ? ' Prices marked ~ are estimates.' : ''}`,
     picks,
-    followUps: ask ? ['Gift for a teen under $50', 'Something for my mom', 'Tech gadgets under $100'] : FOLLOW_UPS
+    followUps: ask ? START : FOLLOW_UPS
   };
 }

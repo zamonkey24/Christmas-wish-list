@@ -147,3 +147,9 @@ Cause: migrate() treated every current default id as 'already offered' whenever 
 - **Upgrade flow**: `POST /api/catalog/upgrade {ideaId,url}` and auto-upgrade after `/preview` (`titleMatch` in catalog.mjs; model numbers/edition words must match) turn an idea into a verified listing for everyone (first wins, `catalog/upgrades` blob).
 - Tests: `node tools/test/api.test.mjs` (80), `node tools/test/bloom.test.mjs` (31), `node tools/test/utils.test.mjs` (6), browser e2e `tools/test/e2e-browser.mjs` (needs `tools/test/e2e-server.mjs` on port 4300 and `/tmp/B0DBRGYTDB.html`).
 - Not pushed: Netlify deploys paused; push needs the owner's OK.
+
+## Phase: wishlist-first Bloom, Secret Santa, photo filter
+- Bloom/catalog are for building the user's OWN wishlist (copy, prompts, chips). Bloom never repeats items already on the wishlist (`ownedIds` in bloom.mjs) and, when asked something open ("what should I add?"), learns taste from wishlist titles (lite `taste`, Claude `get_my_wishlist`).
+- Catalog: `photos=1` query param / "📷 Real photos only" chip; ideas with real photos rank above plain-tile ideas. Only 25 of 567 ideas have real photos (Wikimedia); the rest need pasted links (see earlier phase).
+- **Secret Santa** (`🎅` tab, `src/components/SecretSanta.jsx`; API `GET/POST /api/santa`, `POST santa/join {code}`, `GET/DELETE santa/:id`, `POST santa/:id/draw`, `POST santa/:id/leave`). Keys: `santa/<id>`, `santa-codes/<CODE>`, `santa-user/<userId>`. Draw = secure shuffle then one big circle (no self-draws); needs >=3 members; once only; each member sees only their own `youGive`; the receiver's list is added to the giver's `joined` so they can open it. Join link: `/?santa=CODE` (kept through login/signup via localStorage). Not emailed.
+- Tests: api 83, bloom 32, utils 6, e2e adds a Secret Santa step.

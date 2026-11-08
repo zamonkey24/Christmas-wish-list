@@ -620,6 +620,7 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
       min: num('min', 0),
       max: num('max', Infinity),
       sort: q.get('sort') || 'relevance',
+      photos: q.get('photos') === '1',
       page: num('page', 1),
       limit: num('limit', 24)
     }));
@@ -670,6 +671,125 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
       }
     }
     return out;
+  }
+
+  // ---------- Secret Santa
+  // A group has a join code. The organizer draws once (everyone gets exactly one person, never themselves, in one big circle).
+  // Each member can only ever see who THEY drew; the draw is never shown to anyone else, not even the organizer.
+  const SANTA_MAX = 30;
+  const santaCode = () => inviteCode().slice(0, 6).toUpperCase();
+  async function santaIds(userId) { return (await getJSON(`santa-user/${userId}`)) || []; }
+  async function santaAdd(userId, id) {
+    const ids = await santaIds(userId);
+    if (!ids.includes(id)) await store.setJSON(`santa-user/${userId}`, [...ids, id]);
+  }
+  async function santaGet(id) {
+    const g = await getJSON(`santa/${str(id, 40)}`);
+    if (!g) throw new HttpError(404, 'That Secret Santa group was not found.');
+    return g;
+  }
+  function santaView(g, user) {
+    const mine = g.assignments?.[user.id];
+    const receiver = mine ? g.members.find(m => m.userId === mine) : null;
+    return {
+      id: g.id, name: g.name, budget: g.budget, date: g.date, code: g.code, drawn: Boolean(g.drawnAt),
+      isOrganizer: g.organizerId === user.id,
+      canDraw: g.organizerId === user.id && !g.drawnAt && g.members.length >= 3,
+      members: g.members.map(m => ({ name: m.name, you: m.userId === user.id, organizer: m.userId === g.organizerId })),
+      ...(receiver ? { youGive: { name: receiver.name, listId: receiver.listId } } : {})
+    };
+  }
+  async function santaCreate(req) {
+    const user = await requireUser(req);
+    const b = await readBody(req);
+    const name = str(b.name, 50);
+    if (!name) throw new HttpError(400, 'Give your Secret Santa group a name.');
+    const budget = Math.round(Number(b.budget));
+    if ((await santaIds(user.id)).length >= 20) throw new HttpError(400, 'You are in a lot of groups already.');
+    const g = {
+      id: `s_${rand(6)}`, name, budget: Number.isFinite(budget) && budget > 0 && budget <= 10000 ? budget : 0, date: str(b.date, 30),
+      code: santaCode(), organizerId: user.id, createdAt: now(), drawnAt: null, assignments: null,
+      members: [{ userId: user.id, name: user.name, listId: user.myListId }]
+    };
+    await store.setJSON(`santa/${g.id}`, g);
+    await store.setJSON(`santa-codes/${g.code}`, { id: g.id });
+    await santaAdd(user.id, g.id);
+    return json(santaView(g, user));
+  }
+  async function santaMine(req) {
+    const user = await requireUser(req);
+    const groups = [];
+    for (const id of await santaIds(user.id)) {
+      const g = await getJSON(`santa/${id}`);
+      if (g && g.members.some(m => m.userId === user.id)) groups.push({ id: g.id, name: g.name, members: g.members.length, drawn: Boolean(g.drawnAt), budget: g.budget, date: g.date });
+    }
+    return json({ groups });
+  }
+  async function santaJoin(req) {
+    const user = await requireUser(req);
+    const b = await readBody(req);
+    await hit(`santa-join/${user.id}`, 30, 3600000);
+    const code = str(b.code, 20).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const ref = code ? await getJSON(`santa-codes/${code}`) : null;
+    const g = ref ? await getJSON(`santa/${ref.id}`) : null;
+    if (!g) throw new HttpError(404, 'That Secret Santa code was not found. Check it and try again.');
+    if (!g.members.some(m => m.userId === user.id)) {
+      if (g.drawnAt) throw new HttpError(409, 'Names were already drawn for that group, so no one new can join.');
+      if (g.members.length >= SANTA_MAX) throw new HttpError(400, 'That group is full.');
+      g.members.push({ userId: user.id, name: user.name, listId: user.myListId });
+      await store.setJSON(`santa/${g.id}`, g);
+    }
+    await santaAdd(user.id, g.id);
+    return json(santaView(g, user));
+  }
+  async function santaShow(req, id) {
+    const user = await requireUser(req);
+    const g = await santaGet(id);
+    if (!g.members.some(m => m.userId === user.id)) throw new HttpError(403, 'You are not in that group.');
+    return json(santaView(g, user));
+  }
+  async function santaDraw(req, id) {
+    const user = await requireUser(req);
+    const g = await santaGet(id);
+    if (g.organizerId !== user.id) throw new HttpError(403, 'Only the organizer can draw names.');
+    if (g.drawnAt) throw new HttpError(409, 'Names were already drawn.');
+    if (g.members.length < 3) throw new HttpError(400, 'You need at least 3 people to draw names.');
+    // Shuffle (Fisher-Yates with secure randomness), then each person gives to the next one around the circle.
+    const order = g.members.map(m => m.userId);
+    for (let i = order.length - 1; i > 0; i--) { const j = crypto.randomInt(i + 1); [order[i], order[j]] = [order[j], order[i]]; }
+    const assignments = {};
+    order.forEach((giver, i) => { assignments[giver] = order[(i + 1) % order.length]; });
+    g.assignments = assignments; g.drawnAt = now();
+    await store.setJSON(`santa/${g.id}`, g);
+    // Each giver can now open the wishlist of the person they drew.
+    for (const [giver, receiver] of Object.entries(assignments)) {
+      const listId = g.members.find(m => m.userId === receiver).listId;
+      const u = await getJSON(`users/${giver}`);
+      if (u && !(u.joined || []).some(j => j.listId === listId)) {
+        u.joined = [...(u.joined || []), { listId, addedAt: now(), santa: g.id }];
+        await store.setJSON(`users/${giver}`, u);
+      }
+    }
+    return json(santaView(g, user));
+  }
+  async function santaLeave(req, id) {
+    const user = await requireUser(req);
+    const g = await santaGet(id);
+    if (g.organizerId === user.id) throw new HttpError(400, 'The organizer can delete the group instead of leaving it.');
+    if (g.drawnAt) throw new HttpError(409, 'Names were already drawn, so you cannot leave now.');
+    g.members = g.members.filter(m => m.userId !== user.id);
+    await store.setJSON(`santa/${g.id}`, g);
+    await store.setJSON(`santa-user/${user.id}`, (await santaIds(user.id)).filter(x => x !== g.id));
+    return json({ ok: true });
+  }
+  async function santaDelete(req, id) {
+    const user = await requireUser(req);
+    const g = await santaGet(id);
+    if (g.organizerId !== user.id) throw new HttpError(403, 'Only the organizer can delete the group.');
+    for (const m of g.members) await store.setJSON(`santa-user/${m.userId}`, (await santaIds(m.userId)).filter(x => x !== g.id));
+    await store.delete(`santa/${g.id}`);
+    await store.delete(`santa-codes/${g.code}`);
+    return json({ ok: true });
   }
 
   async function bloomChat(req) {
@@ -799,6 +919,15 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
       if (path === 'catalog' && m === 'GET') return await catalogSearch(req);
       if (path === 'bloom' && m === 'POST') return await bloomChat(req);
       if (path === 'catalog/upgrade' && m === 'POST') return await upgradeIdea(req);
+      if (path === 'santa' && m === 'GET') return await santaMine(req);
+      if (path === 'santa' && m === 'POST') return await santaCreate(req);
+      if (path === 'santa/join' && m === 'POST') return await santaJoin(req);
+      if (seg[0] === 'santa' && seg.length >= 2) {
+        if (seg.length === 2 && m === 'GET') return await santaShow(req, seg[1]);
+        if (seg.length === 2 && m === 'DELETE') return await santaDelete(req, seg[1]);
+        if (seg[2] === 'draw' && m === 'POST') return await santaDraw(req, seg[1]);
+        if (seg[2] === 'leave' && m === 'POST') return await santaLeave(req, seg[1]);
+      }
       if (path === 'legacy' && m === 'GET') return await legacyAvailable(req);
       if (path === 'import-legacy' && m === 'POST') return await importLegacy(req);
       if (seg[0] === 'lists' && seg.length >= 2) {

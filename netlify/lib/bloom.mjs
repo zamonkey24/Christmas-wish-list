@@ -29,14 +29,14 @@ const Answer = z.object({
   followUps: z.array(z.string())
 });
 
-const SYSTEM = `You are Bloom AI, the gift-finding expert inside GiftBloom, a wishlist website. People ask you for gift ideas and you find great ones.
+const SYSTEM = `You are Bloom AI, the wishlist helper inside GiftBloom, a wishlist website. People use you to build THEIR OWN wishlist: you find things they would love to receive, and they add them to their list with one tap. You are not a gift-shopping assistant for buying for other people; speak to the person about themselves ("you", "your wishlist").
 
 How to work:
-1. Work out who the gift is for (age group, relationship), what they like, the budget and the occasion. If a key detail is missing and you cannot reasonably guess it, ask ONE short question instead of guessing: leave picks empty and offer tappable answers in followUps.
+1. Work out the person's interests, age group, budget and occasion (birthday, Christmas...). If they ask something open like "what should I add?", call get_my_wishlist FIRST to learn their taste and spot gaps (for example they have a console but no games or accessories). If a key detail is still missing, ask ONE short question instead of guessing: leave picks empty and offer tappable answers in followUps.
 2. Use your tools before answering. search_catalog is a keyword search over the gift catalog: use short, plain words ("3d printer", "headphones", "skincare", "board game"), filter by age and price, and run several different searches (synonyms, related interests) in one go to build a good shortlist. If a search returns nothing, try a broader word.
-3. When the person asks for gifts for themselves, or what they might like, call get_my_wishlist to learn their taste. When they mention someone who shared a wishlist with them, or you are told they are viewing one, call list_shared_wishlists / get_shared_wishlist and prefer items from that list that are not claimed: those are things the person actually wants. Only suggest unclaimed ones.
+3. Never suggest something that is already on their wishlist (compare with get_my_wishlist). Only if they ask about someone else's shared wishlist (or you are told they are viewing one), call list_shared_wishlists / get_shared_wishlist and suggest unclaimed items from it.
 4. Pick up to ${MAX_PICKS} gifts. Fit the budget (never go over a stated maximum). When no budget is given, mix a lower, a middle and a special pick. Match the age group and the person's interests, and keep variety.
-5. For each pick write a specific "why" (under 140 characters): what it is good for and how it fits their interests and budget. Products marked est:true are gift ideas with ESTIMATED prices, so say "about $X" for those, never an exact price.
+5. For each pick write a specific "why" (under 140 characters): why they would love it, tied to what they said or what is already on their wishlist. Products marked est:true are gift ideas with ESTIMATED prices, so say "about $X" for those, never an exact price.
 6. Reply warmly in under 70 words. Do not list the products in the reply text (they are shown as cards), do not mention ids, and do not include links.
 7. followUps: two or three short things the person might tap next ("Show cheaper options", "Something more special", "More for gamers"), each under 40 characters.
 
@@ -142,6 +142,14 @@ function buildAnswer(parsed, ctx, shown) {
   };
 }
 
+// Catalog products that are already on the person's wishlist (same link or same name), so Bloom never repeats them.
+const nameKey = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+export function ownedIds(catalog, myItems = []) {
+  const titles = new Set(myItems.map(i => nameKey(i.title)));
+  const urls = new Set(myItems.map(i => i.url).filter(Boolean));
+  return catalog.filter(p => titles.has(nameKey(p.title)) || (p.url && urls.has(p.url))).map(p => p.id);
+}
+
 export function createBloom({ getCatalog, getContext = async () => ({ myItems: [], lists: [], focus: null }), client = null, model = DEFAULT_MODEL, effort = 'low', deadlineMs = DEFAULT_DEADLINE_MS, log = console }) {
   async function claudeAnswer({ catalog, messages, shown, context, user }) {
     const started = Date.now();
@@ -197,10 +205,12 @@ export function createBloom({ getCatalog, getContext = async () => ({ myItems: [
   async function answer({ messages, shown = [], focusListId = '' }, user = null) {
     const catalog = await getCatalog();
     const context = await getContext(user, focusListId);
-    const lite = () => liteAnswer({ catalog, messages, shown, focus: context.focus || null });
+    const owned = ownedIds(catalog, context.myItems);
+    const taste = (context.myItems || []).slice(0, 40).map(i => i.title);
+    const lite = () => liteAnswer({ catalog, messages, shown, focus: context.focus || null, owned, taste });
     if (client) {
       try {
-        return { ...(await claudeAnswer({ catalog, messages, shown, context, user })), mode: 'claude' };
+        return { ...(await claudeAnswer({ catalog, messages, shown: [...shown, ...owned], context, user })), mode: 'claude' };
       } catch (e) {
         log.warn?.('Bloom AI: falling back to the built-in brain:', e?.status || '', String(e?.message || e), e?.stack);
         return { ...lite(), mode: 'lite', degraded: true };

@@ -16,6 +16,7 @@ export default function CatalogPage({ listId, onOpenBloom }) {
   const [age, setAge] = useState('');
   const [sort, setSort] = useState('relevance');
   const [max, setMax] = useState('');
+  const [photos, setPhotos] = useState(false);
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ total: 0, pages: 1, categories: {}, ages: {} });
   const [page, setPage] = useState(0);
@@ -36,6 +37,7 @@ export default function CatalogPage({ listId, onOpenBloom }) {
       if (category) params.set('category', category);
       if (age) params.set('age', age);
       if (max) params.set('max', max);
+      if (photos) params.set('photos', '1');
       const r = await api('GET', `catalog?${params}`);
       if (my !== gen.current) return;
       setItems(prev => (replace ? r.items : [...prev, ...r.items.filter(n => !prev.some(p => p.id === n.id))]));
@@ -46,7 +48,7 @@ export default function CatalogPage({ listId, onOpenBloom }) {
     } finally {
       if (my === gen.current) setLoading(false);
     }
-  }, [q, category, age, sort, max]);
+  }, [q, category, age, sort, max, photos]);
 
   // A new search, filter or sort starts again from the top.
   useEffect(() => { load(1, true); }, [load]);
@@ -75,7 +77,7 @@ export default function CatalogPage({ listId, onOpenBloom }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '14px', flexWrap: 'wrap', marginBottom: '14px' }}>
             <div>
               <h1 style={{ fontSize: '1.6rem', margin: '0 0 4px' }} className="gold-gradient-text">Gift Catalog 🛍️</h1>
-              <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>Browse gifts with their photo, price and link, and add any of them to your wishlist in one tap.</p>
+              <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>Find things you'd love and add them to your wishlist in one tap. Gifts marked with a 💡 have an estimated price until someone adds the real listing.</p>
             </div>
             <button onClick={onOpenBloom} className="festive-btn-primary" style={{ padding: '10px 18px' }}><Sparkles style={{ width: '16px', height: '16px' }} /> Ask Bloom AI</button>
           </div>
@@ -96,6 +98,8 @@ export default function CatalogPage({ listId, onOpenBloom }) {
             ))}
           </div>
           <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingTop: '10px' }}>
+            <button onClick={() => setPhotos(!photos)} className="glass-pill" aria-pressed={photos}
+              style={{ padding: '6px 14px', fontSize: '0.8rem', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer', color: photos ? '#0b1220' : '#cbd5e1', background: photos ? '#86efac' : undefined, borderColor: photos ? '#86efac' : undefined }}>📷 Real photos only</button>
             {chip('', 'All', totalAll)}
             {Object.entries(meta.categories).sort((a, b) => b[1] - a[1]).map(([c, n]) => chip(c, c, n))}
           </div>

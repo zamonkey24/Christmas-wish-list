@@ -7,6 +7,7 @@ import AuthScreen from './components/AuthScreen';
 import InviteLanding from './components/InviteLanding';
 import LandingPage from './components/LandingPage';
 import SharedWithMe from './components/SharedWithMe';
+import SecretSanta from './components/SecretSanta';
 import Snowfall from './components/Snowfall';
 import { Notice, Spinner } from './components/ui';
 import { Sparkles } from 'lucide-react';
@@ -15,6 +16,7 @@ import { THEMES, ThemeContext } from './ThemeContext';
 import { api } from './api';
 
 const PENDING_INVITE_KEY = 'giftbloom_pending_invite';
+const PENDING_SANTA_KEY = 'giftbloom_pending_santa';
 const AUTH_ROUTES = ['login', 'signup', 'forgot', 'reset'];
 
 const safeGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -35,6 +37,7 @@ export default function App() {
   const [message, setMessage] = useState(null); // a simple full-page message, e.g. after unsubscribing
   const [notice, setNotice] = useState('');
   const [bloomOpen, setBloomOpen] = useState(false);
+  const [santaCode, setSantaCode] = useState('');
 
   // The home page and account screens use the calm Classic look; an open wishlist uses its own theme.
   // ?theme=birthday|christmas|classic previews a look on this device only.
@@ -103,7 +106,9 @@ export default function App() {
       const reset = take('reset');
       const unsubscribe = take('unsubscribe');
       let code = take('invite');
-      if (reset || unsubscribe || code) window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+      const santa = take('santa');
+      if (santa) safeSet(PENDING_SANTA_KEY, santa.slice(0, 20));
+      if (reset || unsubscribe || code || santa) window.history.replaceState(null, '', url.pathname + url.search + url.hash);
       if (code) safeSet(PENDING_INVITE_KEY, code); else code = safeGet(PENDING_INVITE_KEY);
 
       if (unsubscribe) {
@@ -119,6 +124,7 @@ export default function App() {
       let loggedIn = null;
       try { loggedIn = await refreshMe(); } catch { /* offline: show the home page */ }
       if (code && !reset) await handleInvite(code, Boolean(loggedIn));
+      if (loggedIn && safeGet(PENDING_SANTA_KEY)) { setSantaCode(safeGet(PENDING_SANTA_KEY)); safeSet(PENDING_SANTA_KEY, null); setTab('santa'); }
       setBoot('ready');
     })();
   }, [refreshMe, handleInvite]);
@@ -129,6 +135,7 @@ export default function App() {
     setMessage(null);
     navigate('home');
     setTab('mine');
+    if (safeGet(PENDING_SANTA_KEY)) { setSantaCode(safeGet(PENDING_SANTA_KEY)); safeSet(PENDING_SANTA_KEY, null); setTab('santa'); }
     const code = safeGet(PENDING_INVITE_KEY);
     if (code) { setOpen(null); await handleInvite(code, true); }
   };
@@ -245,6 +252,7 @@ export default function App() {
       </main>
     );
   }
+  if (tab === 'santa') return shell(<SecretSanta initialCode={santaCode} onConsumed={() => setSantaCode('')} onChanged={refreshMe} onOpenList={(id) => { setOpen({ listId: id }); }} />);
   if (tab === 'account') return shell(<AccountPage me={me} onChanged={refreshMe} onSignOut={signOut} />);
 
   return shell(<ListView key={me.myListId} listId={me.myListId} onTheme={changeTheme} />);

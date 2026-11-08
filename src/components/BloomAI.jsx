@@ -4,12 +4,12 @@ import { api } from '../api';
 import ProductCard from './ProductCard';
 
 const STORE_KEY = 'giftbloom_bloom_chat';
-const INTRO = { role: 'assistant', content: "Hi, I'm Bloom AI ✨ Tell me who you're shopping for, what they like and a budget, and I'll find gifts. You can also paste a product link and I'll add it to your wishlist with the photo and price." };
+const INTRO = { role: 'assistant', content: "Hi, I'm Bloom AI ✨ Tell me what you're into, your age and a budget, and I'll find things for your wishlist. You can also paste a product link and I'll add it with the photo and price." };
 const VOICE_KEY = 'giftbloom_bloom_voice';
 const Recognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
 const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
 const speak = (t) => { try { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(String(t).replace(/\s+/g, ' ').slice(0, 400)); u.rate = 1.02; window.speechSynthesis.speak(u); } catch { /* voice unavailable */ } };
-const IDEAS = ['Gift for a 14 year old who loves 3D printing, under $300', 'Cologne for my dad under $60', 'My grandma likes puzzles and tea', 'Something for a college student, around $40'];
+const IDEAS = ['What should I add to my wishlist?', "I'm 14 and love 3D printing, under $300", 'I love skincare and cologne, around $40', 'Birthday ideas for a college student'];
 
 const load = () => { try { const v = JSON.parse(sessionStorage.getItem(STORE_KEY)); return Array.isArray(v) && v.length ? v : [INTRO]; } catch { return [INTRO]; } };
 
@@ -67,7 +67,7 @@ export default function BloomAI({ open, onClose, listId, focusListId = '', onOpe
         <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Sparkles style={{ width: '18px', height: '18px' }} /></div>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 800, color: '#f8fafc' }}>Bloom AI</div>
-          <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{mode === 'claude' ? 'AI mode: searches the catalog and reads wishlists' : mode === 'lite' ? 'Built-in mode: understands ages, hobbies and budgets' : 'Your gift-finding helper'}</div>
+          <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{mode === 'claude' ? 'AI mode: searches the catalog and reads wishlists' : mode === 'lite' ? 'Built-in mode: understands ages, hobbies and budgets' : 'Your wishlist helper'}</div>
         </div>
         {canSpeak && <button onClick={toggleVoice} title={voice ? 'Voice replies on' : 'Voice replies off'} aria-label="Toggle spoken replies" aria-pressed={voice} style={{ background: 'none', border: 'none', color: voice ? '#a5b4fc' : '#94a3b8', cursor: 'pointer' }}>{voice ? <Volume2 style={{ width: '18px', height: '18px' }} /> : <VolumeX style={{ width: '18px', height: '18px' }} />}</button>}
         <button onClick={() => { setMessages([INTRO]); setMode(null); }} title="Start over" aria-label="Start over" style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><RotateCcw style={{ width: '17px', height: '17px' }} /></button>
@@ -113,7 +113,7 @@ export default function BloomAI({ open, onClose, listId, focusListId = '', onOpe
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); send(); }} style={{ display: 'flex', gap: '8px', padding: '12px 14px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Who is it for? Or paste a product link…" aria-label="Message Bloom AI" maxLength={800} autoFocus
+        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="What are you into? Or paste a product link…" aria-label="Message Bloom AI" maxLength={800} autoFocus
           style={{ flex: 1, padding: '11px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff', outline: 'none', fontSize: '0.92rem' }} />
         {Recognition && <button type="button" onClick={listen} aria-label={listening ? 'Stop listening' : 'Talk to Bloom'} title="Talk to Bloom" className="glass-pill" style={{ padding: '10px 12px', cursor: 'pointer', color: listening ? '#fca5a5' : '#cbd5e1', borderColor: listening ? '#fca5a5' : undefined }}><Mic style={{ width: '17px', height: '17px' }} /></button>}
         <button type="submit" disabled={busy || !text.trim()} className="festive-btn-primary" style={{ padding: '10px 14px' }} aria-label="Send"><Send style={{ width: '17px', height: '17px' }} /></button>

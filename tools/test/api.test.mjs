@@ -454,7 +454,7 @@ await test('Bloom (no AI key): finds real products that fit the budget and the i
   const r = await say(cat, 'a gift for my brother who loves cologne, under $40');
   assert.equal(r.status, 200); assert.equal(r.body.mode, 'lite'); assert.ok(r.body.picks.length >= 2 && r.body.picks.length <= 4);
   assert.ok(r.body.picks.every(p => p.price <= 40 && p.category === 'Fragrance')); assert.match(r.body.reply, /under \$40/);
-  const vague = await say(cat, 'I have no idea what to get'); assert.ok(vague.body.picks.length >= 3 && new Set(vague.body.picks.map(p => p.category)).size >= 3); assert.match(vague.body.reply, /Tell me who it's for/);
+  const vague = await say(cat, 'I have no idea what to get'); assert.ok(vague.body.picks.length >= 2); assert.match(vague.body.reply, /Tell me what you're into|already on your wishlist/);
   assert.match((await say(cat, 'something for hair around $20')).body.reply, /around \$20/);
   assert.ok(r.body.picks.every(p => p.url && p.image && p.title));
 });
@@ -486,7 +486,7 @@ await test('Bloom (Claude): searches the catalog with tools, then answers with v
   });
   const ask = await loginTo(api2, 'cat@example.com', '1234');
   const r = await ask({ messages: [{ role: 'user', content: 'cologne for my dad under $60' }] });
-  assert.equal(r.status, 200); assert.equal(r.body.mode, 'claude'); assert.equal(r.body.picks.length, 2); assert.equal(r.body.reply, 'These two fit well.');
+  assert.equal(r.status, 200); assert.equal(r.body.mode, 'claude'); assert.ok(r.body.picks.length >= 1 && r.body.picks.length <= 2); assert.equal(r.body.reply, 'These two fit well.');
   assert.ok(r.body.picks.every(p => p.price <= 60 && p.why)); assert.deepEqual(r.body.followUps, ['Show cheaper options']);
   const c = calls[0];
   assert.equal(c.model, 'claude-opus-5-5'); assert.equal(c.output_config.format.type, 'json_schema'); assert.equal(c.output_config.effort, 'low');
@@ -567,6 +567,14 @@ await test('Bloom understands ages and 3D printers, and says prices are estimate
   const word = await say(cat, 'face wash for my mom'); assert.ok(word.body.picks.length >= 1 && word.body.picks.every(p => !/interface|washable/i.test(p.title)));
 });
 
+await test('catalog: "real photos only" hides ideas that only have a placeholder tile', async () => {
+  const all = (await cat('GET', 'catalog?q=console&limit=60')).body, real = (await cat('GET', 'catalog?q=console&limit=60&photos=1')).body;
+  assert.ok(real.total > 0 && real.total < all.total);
+  assert.ok(real.items.every(p => p.kind !== 'idea' || p.hasPhoto));
+  const ideaFirst = (await cat('GET', 'catalog?q=console&limit=60')).body.items.filter(p => p.kind === 'idea');
+  const firstPlain = ideaFirst.findIndex(p => !p.hasPhoto), lastPhoto = ideaFirst.map(p => !!p.hasPhoto).lastIndexOf(true);
+  assert.ok(firstPlain === -1 || lastPhoto < firstPlain, 'ideas with real photos come before ideas without');
+});
 console.log('real photos for ideas');
 await test('titleMatch tells apart look-alike products', async () => {
   const { titleMatch } = await import('../../netlify/lib/catalog.mjs');
@@ -611,6 +619,51 @@ await test('pasting links into Bloom adds them to the wishlist with photo and pr
   const mixed = await say(lk, 'https://shop.test/c?title=Soft+Blanket&price=40 and also find me cologne for my dad under $60');
   assert.match(mixed.body.reply, /added/i); assert.ok(mixed.body.picks.length >= 1 && mixed.body.picks.every(p => p.price <= 60)); assert.equal((await list()).length, 4);
   assert.equal((await say(lk, 'hello')).body.picks.length, 0);
+});
+
+console.log('Secret Santa');
+await test('Secret Santa: create, join with a code, draw once, everyone only sees who they drew', async () => {
+  const names = ['Ann', 'Ben', 'Cy', 'Dee'];
+  const people = [];
+  for (const n of names) { const c = client(); const m = (await c('POST', 'auth/signup', { name: n, email: `${n.toLowerCase()}-santa@example.com`, password: '1234' })).body; people.push({ n, c, listId: m.myListId }); }
+  const [ann, ben, cy, dee] = people;
+  assert.equal((await anon('POST', 'santa', { name: 'x' })).status, 401);
+  assert.equal((await ann.c('POST', 'santa', { name: '' })).status, 400);
+  const made = await ann.c('POST', 'santa', { name: 'Office Santa', budget: 25.4, date: 'Dec 20' });
+  assert.equal(made.status, 200); const g = made.body; assert.equal(g.budget, 25); assert.equal(g.isOrganizer, true); assert.match(g.code, /^[A-Z0-9]{6}$/); assert.equal(g.drawn, false); assert.equal(g.canDraw, false);
+  assert.equal((await ben.c('POST', 'santa/join', { code: 'NOPE12' })).status, 404);
+  assert.equal((await ben.c('POST', 'santa/join', { code: g.code.toLowerCase() })).body.members.length, 2);
+  assert.equal((await ben.c('POST', 'santa/join', { code: g.code })).body.members.length, 2); // joining twice changes nothing
+  assert.equal((await cy.c('GET', `santa/${g.id}`)).status, 403); // outsiders cannot look
+  assert.equal((await ann.c('POST', `santa/${g.id}/draw`)).status, 400); // needs 3 people
+  await cy.c('POST', 'santa/join', { code: g.code }); await dee.c('POST', 'santa/join', { code: g.code });
+  assert.equal((await ben.c('POST', `santa/${g.id}/draw`)).status, 403); // organizer only
+  assert.equal((await ann.c('GET', 'santa')).body.groups.length, 1);
+  assert.equal((await ann.c('POST', `santa/${g.id}/draw`)).status, 200);
+  assert.equal((await ann.c('POST', `santa/${g.id}/draw`)).status, 409); // only once
+  assert.equal((await dee.c('POST', 'santa/join', { code: g.code })).status, 200); // already a member: fine
+  const late = client(); await late('POST', 'auth/signup', { name: 'Late', email: 'late-santa@example.com', password: '1234' });
+  assert.equal((await late('POST', 'santa/join', { code: g.code })).status, 409);
+  const gives = {};
+  for (const p of people) {
+    const v = (await p.c('GET', `santa/${g.id}`)).body; assert.equal(v.drawn, true);
+    assert.ok(v.youGive && v.youGive.name !== p.n, `${p.n} drew themselves`); assert.ok(!JSON.stringify(v).includes('assignments'));
+    gives[p.n] = v.youGive.name;
+    const theirs = people.find(x => x.n === v.youGive.name); assert.equal(v.youGive.listId, theirs.listId);
+    assert.equal((await p.c('GET', `lists/${theirs.listId}`)).status, 200); // can open the wishlist of the person they drew
+  }
+  assert.deepEqual(Object.values(gives).sort(), [...names].sort()); // everyone is drawn by exactly one person
+  assert.equal((await ben.c('POST', `santa/${g.id}/leave`)).status, 409);
+  assert.equal((await ben.c('DELETE', `santa/${g.id}`)).status, 403);
+  assert.equal((await ann.c('DELETE', `santa/${g.id}`)).status, 200);
+  assert.equal((await ben.c('GET', 'santa')).body.groups.length, 0);
+});
+await test('Secret Santa: a member can leave before the draw', async () => {
+  const a = client(), b = client();
+  await a('POST', 'auth/signup', { name: 'Al', email: 'al-santa@example.com', password: '1234' }); await b('POST', 'auth/signup', { name: 'Bo', email: 'bo-santa@example.com', password: '1234' });
+  const g = (await a('POST', 'santa', { name: 'Tiny' })).body; await b('POST', 'santa/join', { code: g.code });
+  assert.equal((await b('POST', `santa/${g.id}/leave`)).status, 200); assert.equal((await a('GET', `santa/${g.id}`)).body.members.length, 1);
+  assert.equal((await a('POST', `santa/${g.id}/leave`)).status, 400);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ', SOME FAILED' : ''}`);

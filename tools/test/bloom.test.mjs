@@ -61,7 +61,7 @@ await test('picks are varied (not four of the same thing)', () => {
   assert.ok(new Set(r.picks.map(p => p.category)).size >= 3, r.picks.map(p => p.category).join(','));
 });
 await test('vague or empty asks get a helpful question, not nonsense', () => {
-  for (const t of ['I have no idea what to get']) { const r = lite(t); assert.match(r.reply, /Tell me who it's for/); assert.ok(r.picks.length >= 3); }
+  for (const t of ['I have no idea what to get']) { const r = lite(t); assert.match(r.reply, /Tell me what you're into/); assert.ok(r.picks.length >= 3); }
 });
 await test('small talk gets a friendly answer, not a product dump', () => {
   for (const t of ['hi', 'Hello!', 'thanks', 'what can you do?', 'help']) { const r = lite(t); assert.equal(r.picks.length, 0, t); assert.ok(r.reply.length > 20 && r.followUps.length >= 2, t); }
@@ -211,6 +211,18 @@ await test('another model: no fallback parameter, effort is configurable', async
   const client = makeClient(() => final({ reply: 'ok', picks: [], followUps: [] }));
   await bloomWith(client, { model: 'claude-haiku-5-5', effort: 'medium' }).answer({ messages: u('hi') }, { id: 'u1' });
   const p = client.calls[0].params; assert.equal(p.model, 'claude-haiku-5-5'); assert.ok(!('fallbacks' in p) && !('betas' in p)); assert.equal(p.output_config.effort, 'medium');
+});
+
+console.log('built-in brain: your own wishlist');
+await test('never suggests what is already on your wishlist, and learns your taste from it', async () => {
+  const { ownedIds } = await import('../../netlify/lib/bloom.mjs');
+  const first = lite('cologne for me under $60');
+  const mine = first.picks.slice(0, 2).map(p => ({ title: p.title, url: p.url }));
+  const owned = ownedIds(catalog, mine); assert.ok(owned.length >= 2);
+  const again = lite('cologne for me under $60', { owned });
+  assert.ok(again.picks.length >= 1 && again.picks.every(p => !owned.includes(p.id)));
+  const taste = lite('what should I add?', { taste: ['Nintendo Switch Lite', 'Pokemon game', 'Xbox controller'] });
+  assert.match(taste.reply, /already on your wishlist.*gaming/i); assert.ok(taste.picks.length >= 2);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ', SOME FAILED' : ''}`);
