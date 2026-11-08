@@ -178,7 +178,7 @@ export default function App() {
             <Sparkles style={{ width: '17px', height: '17px' }} /> Bloom AI
           </button>
         )}
-        {me && <BloomAI open={bloomOpen} onClose={() => setBloomOpen(false)} listId={me.myListId} />}
+        {me && <BloomAI open={bloomOpen} onClose={() => setBloomOpen(false)} listId={me.myListId} focusListId={open?.listId || ''} onOpenList={(id) => { setTab('shared'); setOpen({ listId: id }); }} />}
       </div>
     </ThemeContext.Provider>
   );

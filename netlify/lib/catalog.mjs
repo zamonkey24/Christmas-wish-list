@@ -83,6 +83,21 @@ function score(p, tokens) {
   return s;
 }
 
+// How well does a real product title describe an idea? Every distinctive word of the idea (numbers and model names
+// included, so "AirPods 4" does not match "AirPods Pro 2") must appear in the other title.
+const MATCH_STOP = new Set(['the', 'and', 'for', 'with', 'by', 'of', 'a', 'an', 'in', 'on', 'to', 'new', 'pack', 'set', 'oz', 'fl', 'inch']);
+const matchTokens = (s) => new Set(String(s).toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/['’]s\b/g, '').replace(/[^a-z0-9]+/g, ' ').split(' ').filter(t => t && !MATCH_STOP.has(t)).map(t => (t.length > 3 && t.endsWith('s') && !t.endsWith('ss') ? t.slice(0, -1) : t)));
+const EDITION = new Set(['mini', 'pro', 'max', 'plus', 'ultra', 'lite', 'xl', 'se', 'air', 'slim', 'digital', 'kids', 'junior']);
+export function titleMatch(ideaTitle, otherTitle) {
+  const a = matchTokens(ideaTitle), b = matchTokens(otherTitle);
+  if (a.size < 2) return 0;
+  const base = [...a].filter(t => b.has(t)).length / a.size;
+  // A different model is a different product: a missing number ("4" vs "Pro 2") or an extra/missing edition word fails the match.
+  const missingNumber = [...a].some(t => /\d/.test(t) && !b.has(t));
+  const edition = (x, y) => [...x].some(t => EDITION.has(t) && !y.has(t));
+  return missingNumber || edition(a, b) || edition(b, a) ? Math.min(base, 0.5) : base;
+}
+
 export const AGE_GROUPS = ['kids', 'tweens', 'teens', 'young-adults', 'adults', 'seniors'];
 const forAge = (p, age) => !age || !p.ages || p.ages.includes(age); // products without ages suit everyone
 const trust = (p) => (p.starter ? 3 : p.kind === 'idea' ? 1 : 2); // verified products first, ideas last

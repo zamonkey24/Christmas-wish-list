@@ -5,8 +5,9 @@ import { promisify } from 'node:util';
 import { fetchProduct } from './preview.mjs';
 import { createMailer } from './mailer.mjs';
 import { welcomeEmail, resetEmail, promoEmail } from './emails.mjs';
-import { starterCatalog, ideaCatalog, searchProducts, makeProduct, productIdOf } from './catalog.mjs';
+import { starterCatalog, ideaCatalog, searchProducts, makeProduct, productIdOf, titleMatch } from './catalog.mjs';
 import { createBloom } from './bloom.mjs';
+import { inferGift } from '../../src/utils/inferGift.js';
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -19,6 +20,7 @@ const RESET_MINUTES = 60;
 const MAX_CAMPAIGN = 300;
 const MAX_COMMUNITY = 2000;
 const BLOOM_PER_DAY = 40;
+const UPGRADE_PER_DAY = 25;
 const MAX_BODY = 1_000_000;
 const MAX_ITEMS = 300;
 const LEGACY_SETUP_CODE = '01015'; // the old owner password; lets the original wishlist be imported once
@@ -114,13 +116,51 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
       if (res?.modified !== false) return;
     }
   }
+  // Attach a real listing (photo, price, link) to a gift idea. First match wins so nobody can overwrite a good one.
+  async function attachListing(idea, info, by) {
+    const entry = { image: info.image, url: info.url, price: Math.round(info.price), site: info.site || new URL(info.url).hostname.replace(/^www\./, ''), upgradedBy: by || 'auto', upgradedAt: now() };
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const cur = await store.getWithMetadata('catalog/upgrades', { type: 'json' });
+      const map = cur?.data ? { ...cur.data } : {};
+      if (map[idea.id]) return false;
+      map[idea.id] = entry;
+      const res = cur ? await store.setJSON('catalog/upgrades', map, { onlyIfMatch: cur.etag }) : await store.setJSON('catalog/upgrades', map, { onlyIfNew: true });
+      if (res?.modified !== false) return true;
+    }
+    return false;
+  }
+  // Someone added a real product by link: if it is one of our ideas, the idea gets its real photo for everyone.
+  async function autoUpgrade(info) {
+    if (!info?.title || !info.image || !(info.price > 0) || !info.url) return;
+    const hit = ideaCatalog().find(i => titleMatch(i.title, info.title) >= 0.85 && info.price >= i.price * 0.4 && info.price <= i.price * 2.5);
+    if (hit) await attachListing(hit, info, 'auto');
+  }
   async function allProducts() {
     const community = (await getJSON('catalog/community'))?.items || [];
     const starters = starterCatalog();
     const seen = new Set(starters.map(p => p.id));
-    return [...starters, ...community.filter(p => !seen.has(p.id)), ...ideaCatalog()];
+    const upgrades = (await getJSON('catalog/upgrades')) || {};
+    // An idea that someone has matched to a real listing becomes a verified product with a real photo and price.
+    const ideas = ideaCatalog().map(i => (upgrades[i.id] ? { ...i, ...upgrades[i.id], estimated: false, kind: 'listing', photo: undefined, upgraded: true } : i));
+    return [...starters, ...community.filter(p => !seen.has(p.id)), ...ideas];
   }
-  const bloom = createBloom({ getCatalog: allProducts, client: bloomClient, model: env.BLOOM_MODEL || undefined });
+  // What Bloom's tools may see: this person's own wishlist and the wishlists shared with them (nobody else's).
+  async function bloomContext(user, focusListId) {
+    const mine = user?.myListId ? await getJSON(`lists/${user.myListId}`) : null;
+    const lists = [];
+    for (const j of (user?.joined || []).slice(0, 10)) {
+      const l = await getJSON(`lists/${j.listId}`);
+      if (!l) continue;
+      const claims = await claimsOf(l.id);
+      lists.push({
+        listId: l.id,
+        ownerName: l.ownerName,
+        items: l.items.slice(0, 80).map(i => ({ id: i.id, title: i.title, price: i.price, category: i.category, image: i.imageUrl, url: i.url, estimated: i.estimated, claimed: Boolean(claims[i.id]) }))
+      });
+    }
+    return { myItems: mine?.items || [], lists, focus: focusListId ? lists.find(l => l.listId === focusListId) || null : null };
+  }
+  const bloom = createBloom({ getCatalog: allProducts, getContext: bloomContext, client: bloomClient, model: env.BLOOM_MODEL || undefined, effort: env.BLOOM_EFFORT || undefined, deadlineMs: Number(env.BLOOM_DEADLINE_MS) || undefined });
 
   // ---------- passwords & sessions
   async function hashPassword(password, saltHex) {
@@ -562,6 +602,7 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
     try {
       const info = await fetchProductImpl(url);
       addToCommunity(info).catch(() => {}); // sharing it with the catalog must never get in the way
+      autoUpgrade(info).catch(() => {});
       return json(info);
     } catch (e) {
       throw new HttpError(422, e.message || 'Could not read that link.');
@@ -584,32 +625,104 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
     }));
   }
 
-  async function addListItem(req, listId) {
-    const { list } = await accessList(req, listId, { ownerOnly: true });
-    const b = await readBody(req);
-    const item = cleanItem({ ...b.item, id: b.item?.id || `g_${now()}` });
+  // Puts one gift at the top of a wishlist (skipping duplicates). Returns { added, count, updatedAt, item }.
+  async function insertItem(listId, raw) {
+    const list = await getJSON(`lists/${listId}`);
+    if (!list) throw new HttpError(404, 'Wishlist not found.');
+    const item = cleanItem({ ...raw, id: raw?.id || `g_${now()}` });
     if (!item) throw new HttpError(400, 'That gift is missing a name or price.');
     const key = (u) => (u ? productIdOf(u) : null);
     const dupe = list.items.find(i => i.id === item.id || (item.url && key(i.url) === key(item.url)));
-    if (dupe) return json({ added: false, count: list.items.length });
+    if (dupe) return { added: false, count: list.items.length, item: dupe };
     if (list.items.length >= MAX_ITEMS) throw new HttpError(400, 'Your wishlist is full.');
-    const fresh = await getJSON(`lists/${listId}`);
-    fresh.items = [item, ...fresh.items];
-    fresh.updatedAt = Math.max(now(), (fresh.updatedAt || 0) + 1);
-    await store.setJSON(`lists/${listId}`, fresh);
-    return json({ added: true, count: fresh.items.length, updatedAt: fresh.updatedAt });
+    list.items = [item, ...list.items];
+    list.updatedAt = Math.max(now(), (list.updatedAt || 0) + 1);
+    await store.setJSON(`lists/${listId}`, list);
+    return { added: true, count: list.items.length, updatedAt: list.updatedAt, item };
+  }
+
+  async function addListItem(req, listId) {
+    await accessList(req, listId, { ownerOnly: true });
+    const b = await readBody(req);
+    const { added, count, updatedAt } = await insertItem(listId, b.item);
+    return json(added ? { added, count, updatedAt } : { added, count });
+  }
+
+  // Links pasted into the Bloom chat: read each page, then save the gift (name, photo, price) to the person's own wishlist.
+  const URL_RE = /https?:\/\/[^\s<>"')]+/gi;
+  async function addLinks(user, urls) {
+    const out = [];
+    for (const url of urls) {
+      try {
+        const info = await fetchProductImpl(url);
+        addToCommunity(info).catch(() => {});
+        autoUpgrade(info).catch(() => {});
+        if (!info?.title) throw new Error('That page did not show a product name.');
+        if (!(info.price > 0)) { out.push({ url, ok: false, title: info.title, image: info.image || '', error: 'I could not read a price on that page. Add it with the Add gift button and type the price.' }); continue; }
+        const meta = inferGift(info.title, info.price);
+        const r = await insertItem(user.myListId, {
+          id: `g_${now()}_${out.length}`, title: info.title, price: info.price, category: meta.category, closenessRequired: meta.closenessRequired,
+          priority: 'High Wish ❤️', imageUrl: info.image || '', url: info.url || url, description: info.site ? `From ${info.site}.` : 'Added from a link.', tags: meta.tags
+        });
+        out.push({ url, ok: true, added: r.added, title: r.item.title, price: r.item.price, image: r.item.imageUrl || '', site: info.site || '' });
+      } catch (e) {
+        out.push({ url, ok: false, error: e.message || 'Could not open that link.' });
+      }
+    }
+    return out;
   }
 
   async function bloomChat(req) {
     const user = await requireUser(req);
     const b = await readBody(req);
-    const messages = (Array.isArray(b.messages) ? b.messages : [])
-      .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
-      .map(m => ({ role: m.role, content: m.content.trim().slice(0, 800) }))
-      .slice(-12);
+    const raw = (Array.isArray(b.messages) ? b.messages : []).filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim());
+    const messages = raw.map(m => ({ role: m.role, content: m.content.trim().slice(0, 800) })).slice(-12);
     if (!messages.length || messages[messages.length - 1].role !== 'user') throw new HttpError(400, 'Tell Bloom what you are looking for.');
+    const shown = (Array.isArray(b.shown) ? b.shown : []).filter(x => typeof x === 'string').map(x => x.slice(0, 80)).slice(-60);
+    const focusListId = typeof b.focusListId === 'string' ? b.focusListId.slice(0, 40) : '';
     await hit(`bloom/${user.id}`, BLOOM_PER_DAY, 24 * 3600000);
-    return json(await bloom.answer(messages));
+
+    // Product links in the message are added to the person's wishlist with their real name, photo and price.
+    const fullText = String(raw[raw.length - 1].content).slice(0, 4000);
+    const urls = [...new Set((fullText.match(URL_RE) || []).map(u => u.replace(/[.,;!?]+$/, '')))].slice(0, 3);
+    if (!urls.length) return json(await bloom.answer({ messages, shown, focusListId }, user));
+
+    const linked = await addLinks(user, urls);
+    const names = (xs) => xs.map(x => `“${x.title.length > 60 ? x.title.slice(0, 57) + '…' : x.title}” ($${x.price})`).join(', ');
+    const parts = [];
+    const added = linked.filter(x => x.ok && x.added), dupes = linked.filter(x => x.ok && !x.added), bad = linked.filter(x => !x.ok);
+    if (added.length) parts.push(`Done! I added ${names(added)} to your wishlist, with the photo and price.`);
+    if (dupes.length) parts.push(`${names(dupes)} ${dupes.length > 1 ? 'are' : 'is'} already on your wishlist.`);
+    if (bad.length) parts.push(bad.length === 1 && !added.length && !dupes.length ? `I couldn't add that one: ${bad[0].error}` : `I couldn't read ${bad.length} of the links: ${bad[0].error}`);
+    let reply = parts.join(' ');
+    let picks = [], followUps = [];
+    const rest = fullText.replace(URL_RE, ' ').replace(/\s+/g, ' ').trim();
+    if (rest.split(' ').filter(w => w.length > 1).length >= 3) {
+      const msgs = [...messages.slice(0, -1), { role: 'user', content: rest.slice(0, 800) }];
+      const r = await bloom.answer({ messages: msgs, shown, focusListId }, user);
+      reply = `${reply}\n\n${r.reply}`; picks = r.picks || []; followUps = r.followUps || [];
+    }
+    if (!followUps.length) followUps = ['Find gifts for someone', 'Paste another link'];
+    return json({ reply, picks, followUps, linked, mode: 'links' });
+  }
+
+  async function upgradeIdea(req) {
+    const user = await requireUser(req);
+    const b = await readBody(req);
+    const idea = ideaCatalog().find(i => i.id === b.ideaId);
+    if (!idea) throw new HttpError(404, 'That gift idea was not found.');
+    const upgrades = (await getJSON('catalog/upgrades')) || {};
+    if (upgrades[idea.id]) throw new HttpError(409, 'That gift already has a real listing.');
+    await hit(`upgrade/${user.id}`, UPGRADE_PER_DAY, 24 * 3600000);
+    const url = str(b.url, 2000);
+    if (!url) throw new HttpError(400, 'Paste the product link first.');
+    let info;
+    try { info = await fetchProductImpl(url); } catch (e) { throw new HttpError(422, e.message || 'Could not read that link.'); }
+    if (!info?.title || !info.image || !(info.price > 0)) throw new HttpError(422, 'That page did not show a name, photo and price. Try the product page on Amazon.');
+    if (titleMatch(idea.title, info.title) < 0.6) throw new HttpError(422, `That does not look like “${idea.title}”. Paste the link for that exact product.`);
+    if (!(await attachListing(idea, info, user.id))) throw new HttpError(409, 'That gift already has a real listing.');
+    addToCommunity(info).catch(() => {});
+    return json((await allProducts()).find(p => p.id === idea.id));
   }
 
   async function legacyAvailable(req) {
@@ -685,6 +798,7 @@ export function createApi({ store, legacyStore = null, fetchProductImpl = fetchP
       if (path === 'preview' && m === 'POST') return await preview(req);
       if (path === 'catalog' && m === 'GET') return await catalogSearch(req);
       if (path === 'bloom' && m === 'POST') return await bloomChat(req);
+      if (path === 'catalog/upgrade' && m === 'POST') return await upgradeIdea(req);
       if (path === 'legacy' && m === 'GET') return await legacyAvailable(req);
       if (path === 'import-legacy' && m === 'POST') return await importLegacy(req);
       if (seg[0] === 'lists' && seg.length >= 2) {

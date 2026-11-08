@@ -1,6 +1,3 @@
-// Real-browser test of the home page, accounts, forgot password, emails, invite links, claims, add-by-link, catalog (ages, ideas), Bloom AI and the original-list import.
-// Setup: `npm run build`, then `node tools/test/e2e-server.mjs 4300 &`, then (in a folder with `npm i puppeteer-core`) run this file.
-// Needs a saved Amazon product page at /tmp/B0DBRGYTDB.html (see e2e-server.mjs FIXTURE). Screenshots go to /tmp/pp/.
 import puppeteer from 'puppeteer-core';
 import assert from 'node:assert/strict';
 const BASE = 'http://localhost:4300';

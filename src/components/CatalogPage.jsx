@@ -21,6 +21,7 @@ export default function CatalogPage({ listId, onOpenBloom }) {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [credits, setCredits] = useState(null); // null = closed, [] = loading/none
   const gen = useRef(0); // ignores answers to searches that were replaced by newer ones
   const sentinel = useRef(null);
 
@@ -114,7 +115,7 @@ export default function CatalogPage({ listId, onOpenBloom }) {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '18px' }}>
-            {items.map(p => <ProductCard key={p.id} product={p} listId={listId} />)}
+            {items.map(p => <ProductCard key={p.id} product={p} listId={listId} onUpgraded={(u) => setItems(prev => prev.map(x => (x.id === u.id ? u : x)))} />)}
           </div>
         )}
 
@@ -122,6 +123,23 @@ export default function CatalogPage({ listId, onOpenBloom }) {
         {loading && items.length > 0 && <div style={{ textAlign: 'center', color: '#94a3b8', padding: '24px' }}>Loading more…</div>}
         {more && !loading && <div style={{ textAlign: 'center', padding: '20px' }}><button onClick={() => load(page + 1, false)} className="festive-btn-secondary">Load more</button></div>}
         {!more && items.length > 0 && <div style={{ textAlign: 'center', color: '#64748b', fontSize: '0.85rem', padding: '28px' }}>You’ve seen everything for now. Add a gift by link on your wishlist and it shows up here for everyone.</div>}
+        <div style={{ textAlign: 'center', paddingTop: '6px' }}>
+          <button onClick={async () => { setCredits([]); try { setCredits(await (await fetch('/ideas/photo-credits.json')).json()); } catch { setCredits([]); } }} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.78rem', textDecoration: 'underline' }}>Photo credits</button>
+        </div>
+        {credits && (
+          <div role="dialog" aria-label="Photo credits" onClick={() => setCredits(null)} style={{ position: 'fixed', inset: 0, zIndex: 140, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div onClick={(e) => e.stopPropagation()} className="glass-card" style={{ width: '100%', maxWidth: '640px', maxHeight: '80vh', overflowY: 'auto', padding: '24px', background: '#0b1220' }}>
+              <h2 style={{ margin: '0 0 6px' }}>Photo credits</h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 14px' }}>Some gift photos come from Wikimedia Commons under free licenses. Thank you to the photographers.</p>
+              {credits.length === 0 ? <p style={{ color: '#94a3b8' }}>No credits to show yet.</p> : credits.map(c => (
+                <div key={c.title} style={{ fontSize: '0.82rem', color: '#cbd5e1', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <strong>{c.title}</strong>: {c.credit}, <a href={c.source} target="_blank" rel="noopener noreferrer" style={{ color: '#a5b4fc' }}>{c.license}</a>
+                </div>
+              ))}
+              <button onClick={() => setCredits(null)} className="festive-btn-secondary" style={{ marginTop: '14px' }}>Close</button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
