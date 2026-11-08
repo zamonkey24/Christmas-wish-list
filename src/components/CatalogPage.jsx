@@ -63,8 +63,7 @@ export default function CatalogPage({ listId, onOpenBloom }) {
   }, [more, loading, page, load]);
 
   const chip = (value, label, count) => (
-    <button key={value || 'all'} onClick={() => setCategory(value)} className="glass-pill"
-      style={{ padding: '6px 14px', fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer', color: category === value ? '#fbbf24' : '#cbd5e1', background: category === value ? 'rgba(165, 180, 252, 0.18)' : undefined, borderColor: category === value ? '#a5b4fc' : undefined }}>
+    <button key={value || 'all'} onClick={() => setCategory(value)} className={`cat-chip${category === value ? ' active' : ''}`}>
       {label}{count !== undefined ? ` (${count})` : ''}
     </button>
   );
@@ -72,34 +71,33 @@ export default function CatalogPage({ listId, onOpenBloom }) {
 
   return (
     <main style={{ flex: 1, position: 'relative', zIndex: 10 }}>
-      <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '28px 20px 80px' }}>
-        <div className="glass-card" style={{ padding: '22px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '14px', flexWrap: 'wrap', marginBottom: '14px' }}>
-            <div>
-              <h1 style={{ fontSize: '1.6rem', margin: '0 0 4px' }} className="gold-gradient-text">Gift Catalog 🛍️</h1>
-              <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>Find things you'd love and add them to your wishlist in one tap. Gifts marked with a 💡 have an estimated price until someone adds the real listing.</p>
-            </div>
-            <button onClick={onOpenBloom} className="festive-btn-primary" style={{ padding: '10px 18px' }}><Sparkles style={{ width: '16px', height: '16px' }} /> Ask Bloom AI</button>
+      <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '36px 20px 80px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '14px', flexWrap: 'wrap', marginBottom: '22px' }}>
+          <div>
+            <h1 style={{ fontSize: 'clamp(2rem, 5vw, 2.8rem)', margin: '0 0 6px', letterSpacing: '-0.02em', lineHeight: 1.05 }} className="gold-gradient-text">Catalog</h1>
+            <p style={{ color: '#94a3b8', fontSize: '1rem', margin: 0 }}>Find things you'd love and add them to your wishlist in one tap.</p>
           </div>
+          <button onClick={onOpenBloom} className="festive-btn-primary" style={{ padding: '10px 18px' }}><Sparkles style={{ width: '16px', height: '16px' }} /> Ask Bloom AI</button>
+        </div>
+
+        <div className="catalog-bar">
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', flex: '2 1 260px' }}>
-              <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#64748b' }} />
-              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Search gifts… (try cologne, curly hair, bike)" aria-label="Search the catalog" style={{ ...inputStyle, paddingLeft: '36px' }} />
+            <div style={{ position: 'relative', flex: '3 1 260px' }}>
+              <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '17px', height: '17px', color: '#64748b' }} />
+              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Search gifts… (try cologne, curly hair, bike)" aria-label="Search the catalog" style={{ ...inputStyle, paddingLeft: '42px', borderRadius: '9999px' }} />
             </div>
-            <select value={max} onChange={(e) => setMax(e.target.value)} aria-label="Price" style={{ ...inputStyle, flex: '1 1 130px', background: '#0f172a' }}>{BUDGETS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
-            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort" style={{ ...inputStyle, flex: '1 1 160px', background: '#0f172a' }}>{SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+            <select value={max} onChange={(e) => setMax(e.target.value)} aria-label="Price" style={{ ...inputStyle, flex: '1 1 130px', background: '#0f172a', borderRadius: '9999px' }}>{BUDGETS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort" style={{ ...inputStyle, flex: '1 1 160px', background: '#0f172a', borderRadius: '9999px' }}>{SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
           </div>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingTop: '14px' }} aria-label="Age group">
+          <div className="chip-row" aria-label="Age group">
             {AGES.map(([v, label]) => (
-              <button key={v || 'all-ages'} onClick={() => setAge(v)} className="glass-pill"
-                style={{ padding: '6px 14px', fontSize: '0.8rem', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer', color: age === v ? '#0b1220' : '#cbd5e1', background: age === v ? '#a5b4fc' : undefined, borderColor: age === v ? '#a5b4fc' : undefined }}>
+              <button key={v || 'all-ages'} onClick={() => setAge(v)} className={`cat-chip${age === v ? ' active' : ''}`}>
                 {label}{v && meta.ages[v] !== undefined ? ` (${meta.ages[v]})` : ''}
               </button>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingTop: '10px' }}>
-            <button onClick={() => setPhotos(!photos)} className="glass-pill" aria-pressed={photos}
-              style={{ padding: '6px 14px', fontSize: '0.8rem', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer', color: photos ? '#0b1220' : '#cbd5e1', background: photos ? '#86efac' : undefined, borderColor: photos ? '#86efac' : undefined }}>📷 Real photos only</button>
+          <div className="chip-row">
+            <button onClick={() => setPhotos(!photos)} aria-pressed={photos} className={`cat-chip${photos ? ' active' : ''}`} style={photos ? { background: '#86efac', borderColor: '#86efac' } : undefined}>📷 Real photos only</button>
             {chip('', 'All', totalAll)}
             {Object.entries(meta.categories).sort((a, b) => b[1] - a[1]).map(([c, n]) => chip(c, c, n))}
           </div>
@@ -118,7 +116,7 @@ export default function CatalogPage({ listId, onOpenBloom }) {
             <div><button onClick={onOpenBloom} className="festive-btn-primary" style={{ marginTop: '14px', padding: '9px 18px' }}><Sparkles style={{ width: '15px', height: '15px' }} /> Ask Bloom AI</button></div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '18px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '22px' }}>
             {items.map(p => <ProductCard key={p.id} product={p} listId={listId} onUpgraded={(u) => setItems(prev => prev.map(x => (x.id === u.id ? u : x)))} />)}
           </div>
         )}

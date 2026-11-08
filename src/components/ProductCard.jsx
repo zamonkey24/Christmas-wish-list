@@ -36,20 +36,19 @@ export default function ProductCard({ product, listId, compact = false, why = ''
   };
 
   return (
-    <div className="glass-card" style={{ display: 'flex', flexDirection: compact ? 'row' : 'column', overflow: 'hidden', gap: compact ? '12px' : 0, padding: compact ? '10px' : 0 }}>
-      <div style={{ position: 'relative', flexShrink: 0, width: compact ? '84px' : '100%', height: compact ? '84px' : '170px', background: '#fff', borderRadius: compact ? '10px' : 0, overflow: 'hidden' }}>
+    <div className={`glass-card product-card${compact ? '' : ' product-card-full'}`} style={{ display: 'flex', flexDirection: compact ? 'row' : 'column', overflow: 'hidden', gap: compact ? '12px' : 0, padding: compact ? '10px' : 0, borderRadius: compact ? undefined : '18px' }}>
+      <div style={{ position: 'relative', flexShrink: 0, width: compact ? '84px' : '100%', ...(compact ? { height: '84px' } : { aspectRatio: '4 / 3' }), background: '#fff', borderRadius: compact ? '10px' : 0, overflow: 'hidden' }}>
         {product.image
-          ? <img src={product.image} alt={product.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: noPhoto ? 'cover' : 'contain' }} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+          ? <img className="product-img" src={product.image} alt={product.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: noPhoto ? 'cover' : 'contain', padding: noPhoto || compact ? 0 : '6px' }} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
           : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', background: '#1e293b' }}>🎁</div>}
-        {!compact && <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-color)', padding: '3px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '0.9rem' }}>{price}</div>}
+        {!compact && <div style={{ position: 'absolute', bottom: '10px', left: '10px', background: 'rgba(8,12,24,0.78)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', color: '#fff', padding: '4px 11px', borderRadius: '9999px', fontWeight: 800, fontSize: '0.85rem', border: '1px solid rgba(255,255,255,0.18)', ...(noPhoto ? { bottom: 'auto', top: '10px', left: 'auto', right: '10px' } : {}) }}>{price}</div>}
         {!compact && fromList && <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(16,185,129,0.92)', color: '#fff', padding: '3px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '0.7rem' }}>🎁 {product.ownerName}'s list</div>}
-        {!compact && !fromList && idea && <div title="A gift idea: the price is an estimate and the link searches Amazon" style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(15,23,42,0.85)', color: '#fbbf24', padding: '3px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '0.7rem' }}>💡 Idea</div>}
-        {!compact && product.hasPhoto && product.photo?.example && <div title="A free photo of this kind of product, not necessarily the exact one" style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(15,23,42,0.75)', color: '#cbd5e1', padding: '2px 7px', borderRadius: '6px', fontSize: '0.65rem' }}>example photo</div>}
-        {!compact && noPhoto && <div style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(15,23,42,0.75)', color: '#cbd5e1', padding: '2px 7px', borderRadius: '6px', fontSize: '0.65rem' }}>no photo yet</div>}
+        {!compact && !fromList && idea && <div title="A gift idea: the price is an estimate and the link searches Amazon" style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(15,23,42,0.85)', color: '#fbbf24', padding: '3px 8px', borderRadius: '9999px', fontWeight: 700, fontSize: '0.7rem' }}>💡 Idea</div>}
+        {!compact && product.hasPhoto && product.photo?.example && <div title="A free photo of this kind of product, not necessarily the exact one" style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(15,23,42,0.75)', color: '#cbd5e1', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.65rem' }}>example photo</div>}
       </div>
       <div style={{ padding: compact ? 0 : '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: 0 }}>
         <div>
-          <div style={{ fontSize: '0.7rem', color: '#a5b4fc', fontWeight: 700, textTransform: 'uppercase' }}>{product.category}{compact ? ` · ${price}` : ''}{compact && idea ? ' · idea' : ''}</div>
+          <div style={{ fontSize: '0.68rem', color: '#a5b4fc', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{product.category}{compact ? ` · ${price}` : ''}{compact && idea ? ' · idea' : ''}</div>
           <div style={{ fontWeight: 700, color: '#f8fafc', fontSize: compact ? '0.88rem' : '0.98rem', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.title}</div>
           {why && <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px', lineHeight: 1.35 }}>{why}</div>}
           {!compact && product.hasPhoto && product.photo && (

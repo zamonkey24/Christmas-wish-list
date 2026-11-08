@@ -82,7 +82,7 @@ fs.writeFileSync(new URL('../netlify/lib/ideas-data.mjs', import.meta.url), `// 
 
 fs.mkdirSync(new URL('../public/ideas/', import.meta.url), { recursive: true });
 for (const [category, [emoji, from, to]] of Object.entries(STYLE)) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><text x="200" y="165" font-size="110" text-anchor="middle" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${emoji}</text><text x="200" y="258" font-size="22" text-anchor="middle" fill="#ffffff" fill-opacity="0.75" font-family="system-ui,sans-serif" font-weight="600">${category.replace(/&/g, '&amp;')}</text></svg>\n`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><text x="200" y="150" font-size="110" text-anchor="middle" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${emoji}</text></svg>\n`;
   fs.writeFileSync(new URL(`../public/ideas/${slugify(category)}.svg`, import.meta.url), svg);
 }
 
