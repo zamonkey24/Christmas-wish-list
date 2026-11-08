@@ -181,7 +181,7 @@ export default function App() {
         )}
         {children}
         {me && !bloomOpen && (
-          <button onClick={() => setBloomOpen(true)} aria-label="Open Bloom AI" className="festive-btn-primary" style={{ position: 'fixed', right: '18px', bottom: '18px', zIndex: 120, padding: '12px 18px', borderRadius: '9999px', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
+          <button onClick={() => setBloomOpen(true)} aria-label="Open Bloom AI" className="festive-btn-primary" style={{ position: 'fixed', right: '18px', bottom: '84px', zIndex: 120, padding: '12px 18px', borderRadius: '9999px', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
             <Sparkles style={{ width: '17px', height: '17px' }} /> Bloom AI
           </button>
         )}
